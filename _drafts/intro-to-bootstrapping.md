@@ -25,8 +25,7 @@ In this post, I hope to:
 
 
 ## A quick aside about why I fell in love with bootstrapping
-
-(if you just want get straight to the technical details, feel free to jump ahead)
+(if you just want get straight to the technical details, feel free to [jump ahead](#what-is-bootstrapping))
 
 Some years ago (reasonably early in my career - probably in 2018 or so), I was working on some kind of forecasting project, where we were attempting to forecast something like sales volumes or stock levels or occupancy levels or something, we came across an interesting quandry. We had very limited historic training data, and so had relatively little confidence in the forecasts. We used a collection of different predictive models (including ARIMA-style models, some linear and logistic regression ones, and eventually a NN), and blended the predictions.
 
@@ -46,11 +45,22 @@ And that's where the story ended, for a few years.
 
 And then, in 2021 or 2022, I came across bootstrapping, and my life changed for good.
 
+</details>
 
 # What is bootstrapping
 
+We can phrase this in a few ways, at least one of which will make sense to you, depending on your background and experience (hopefully!):
 
-# Some maths
-$$ x = /sum{y} $$
+1. Bootstrapping is a non-parametric way to estimate a population metric from a sample.
+1. Bootstrapping is a algorithm which gives equally likely outcomes for some sampled outcome, as if you resampled.
+
+In short, bootstrapping is an approach (or algorithm) for estimating some metric of some population, based solely on the sample we have available.
+
+## Some examples where bootstrapping may be helpful
+
+1. You've run an A|B test. What are the range of uplift values we might expect?<br>
+This is another way of saying: "if we ran this experiment over and over again, what range of uplift values would we expect to see?"
+1. We fit a model to some data, where the coefficients in the model have some physical interpretation. What range of coefficient values should we expect to see if we retrained the model on new data?
+1. We calculate some business metric (e.g. average cost per order) and like to know how much this might vary for the next month.
 
 [^1] If my colleague ever reads this, and *doesn't* think it was a good idea, then just know I'm happy to take full responsibility for it.
