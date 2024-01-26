@@ -56,11 +56,94 @@ We can phrase this in a few ways, at least one of which will make sense to you, 
 
 In short, bootstrapping is an approach (or algorithm) for estimating some metric of some population, based solely on the sample we have available.
 
-## Some examples where bootstrapping may be helpful
+## Some examples where bootstrapping may be helpful
 
-1. You've run an A|B test. What are the range of uplift values we might expect?<br>
+1. You've run an A|B test. What are the range of uplift values might we expect?<br>
 This is another way of saying: "if we ran this experiment over and over again, what range of uplift values would we expect to see?"
 1. We fit a model to some data, where the coefficients in the model have some physical interpretation. What range of coefficient values should we expect to see if we retrained the model on new data?
 1. We calculate some business metric (e.g. average cost per order) and like to know how much this might vary for the next month.
 
+Hopefully you can see where this is going. Anytime we calculate a thing based on a sample of data from some population, and we're interested to know what the range of this thing is, then bootstrapping can help.
+
+## How would this traditionally be solved?
+
+For each of the examples mentioned above, there are standard, robust approaches to estimating these things without resorting to bootstrapping.
+
+Specifically:
+1. We can pick an appropriate hyopthesis test, based on what we know about the distribution. This will allow us to calculate a p-value, and some confidence bounds. In some cases, this can be quite challenging (if either it's a complex distribution, an unknown distribution, or you don't know lots of stats)
+1. Depending on the model you're fitting, it may have a way to calculate confidence bounds on its coefficients directly (e.g. the Python `statsmodel` linear regression models have a [`conf_int` method](https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.RegressionResults.conf_int.html), which will directly return confidence bounds. This is based on the Student's t-distribution. See [^2]). Sometimes though, there will either be no way to calculate these confidence bounds, or you may not know how to do it, or even implement it.
+1. If we know how this measure is distributed, we can estimate this by using some stats directly (but this only works if the distribution is "well behaved").
+
+So, while there are sometimes approaches to solving these problems using some stats knowledge, sometimes we either can't, or don't know enough to know how.
+
+In these case, bootstrapping to the rescue!
+
+## So, what exactly is bootstrapping?
+
+Bootstrapping relies on being able to use the sample you have to generate equally likely samples (hence the term 'bootstrapping', as in pulling yourself up on your own bootstraps).
+
+So, we generate lots (usually 1000s) of bootstrap samples from our data. We pretend that each of these is actually a new sample. We calculate the thing on it, and this forms a distribution we can use for whatever we want (getting p-values, confidence bounds, plotting etc)
+
+The magic piece of this is how you generate the bootrap samples, and this is by **sampling with replacement**.
+
+So, the process is as follows:
+1. Take your sample data, generate $n$ samples with replacement (of the same size of the original data).<details open><summary>Why does this work?</summary>
+For a full explanation see [this section](#why-does-it-work). In short, this sample data is the best representation we have of the population, so by redrawing samples with replacement, we're doing our best to simulate what would happen if we had to redraw the sample from the population. Sometimes, we'll draw some of the elements more than once, and sometimes not at all. In this way outliers are sometimes drawn, sometimes not, and sometimes drawn multiple times - this serves to stretch out this distribution.
+</details>
+1. For each of these samples, calculate the thing you care about.
+1. Use this however you want.
+
+
+## An example in code
+
+The complexity of the `run_bootstrap` is seldom more complex than this.
+
+```python
+import numpy as np
+from tqdm import tqdm  # Just to get nice progress meters
+
+
+# A function which computes a measure (e.g. a mean value)
+def calculate_measure(data):
+    return data.mean()
+
+
+def run_bootstrap(sample_data, num_iter=1000):
+    bootstrap_measures = np.empty(shape=0)
+    for _ in tqdm(range(num_iter)):
+        bootstrap_sample = np.random.choice(sample_data, size=sample_data.size, replace=True)
+        bootstrap_measure = calculate_measure(bootstrap_sample)
+        bootstrap_measures = np.append(bootstrap_measures, bootstrap_measure)
+    
+    return bootstrap_measures
+
+
+# We have some data that was sampled from somewhere (we'll make some up)
+np.random.seed(1)
+
+
+samples = np.random.random(478)  # We have a set of 478 samples from the population, drawn from the uniform distribution
+
+bootstrap_measures = run_bootstrap(samples)
+
+# We now have a distribution of the sample mean, we can do whatever we want
+print(f"Expected value: {bootstrap_measures.mean()}")
+print(f"90% confidence bounds: {np.quantile(bootstrap_measures, [0.05, 0.95])}")
+
+```
+
+When you run this, you'll get the following:
+
+```bash
+100%|██████████| 1000/1000 [00:00<00:00, 36131.32it/s]
+Expected value: 0.5075680220514992
+90% confidence bounds: [0.48611194 0.52922992]
+```
+Nothing too surprising here: 
+1. The expected value of this distribution from the bootstrap estimation is 0.508, where the true value is 0.5 (knowing what we know about the distribution the sample was drawn from)
+1. The 90% confidence bounds are wrapped tightly around 0.5. The interpretation for this is: "if we had to draw new samples from the population, and recalculate the mean, 90% of the time these would be between these two values"
+
+
 [^1] If my colleague ever reads this, and *doesn't* think it was a good idea, then just know I'm happy to take full responsibility for it.
+
+[^2] See [this post](https://medium.com/@jcatankard_76170/linear-regression-parameter-confidence-intervals-228f0be5ea82) by Josh Tankard for some sleuthing on the matter
