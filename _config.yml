@@ -1,3 +1,28 @@
-theme: jekyll-theme-minimal
+# theme: jekyll-theme-minimal
 title: Richard Fisher-Monteith's blog
 description: Richard Fisher-Monteith's blog
+
+# Internal nav
+nav:
+  main:
+    writing: "/writing"
+  writing:
+    all: "/writing"
+
+
+# Jekyll build settings
+paginate: 10
+paginate_path: "/writing/page:num"
+permalink: "/writing/:year/:month/:day/:title/"
+sass:
+  sass_dir: "/assets/css"
+  style: :compressed
+highlighter: rouge
+timezone: 'America/Los_Angeles'
+repository: brikis98/yevgeniy-brikman-homepage
+
+# Plugins (GitHub Pages only support a few)
+gems:
+  - jekyll-redirect-from
+  - jekyll-sitemap
+  - jekyll-paginate
