@@ -51,8 +51,8 @@ And then, in 2021 or 2022, I came across bootstrapping, and my life changed for 
 
 We can phrase this in a few ways, at least one of which will make sense to you, depending on your background and experience (hopefully!):
 
-1. Bootstrapping is a non-parametric way to estimate a population metric from a sample.
-1. Bootstrapping is a algorithm which gives equally likely outcomes for some sampled outcome, as if you resampled.
+1. Bootstrapping is a non-parametric way to estimate a population measure from a sample.
+1. Bootstrapping is an algorithm which gives equally likely outcomes for some sampled outcome, as if you resampled.
 
 In short, bootstrapping is an approach (or algorithm) for estimating some metric of some population, based solely on the sample we have available.
 
@@ -69,7 +69,7 @@ Hopefully you can see where this is going. Anytime we calculate a thing based on
 
 For each of the examples mentioned above, there are standard, robust approaches to estimating these things without resorting to bootstrapping.
 
-Specifically:
+Specifically for the above:
 1. We can pick an appropriate hyopthesis test, based on what we know about the distribution. This will allow us to calculate a p-value, and some confidence bounds. In some cases, this can be quite challenging (if either it's a complex distribution, an unknown distribution, or you don't know lots of stats)
 1. Depending on the model you're fitting, it may have a way to calculate confidence bounds on its coefficients directly (e.g. the Python `statsmodel` linear regression models have a [`conf_int` method](https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.RegressionResults.conf_int.html), which will directly return confidence bounds. This is based on the Student's t-distribution. See [^2]). Sometimes though, there will either be no way to calculate these confidence bounds, or you may not know how to do it, or even implement it.
 1. If we know how this measure is distributed, we can estimate this by using some stats directly (but this only works if the distribution is "well behaved").
@@ -80,7 +80,7 @@ In these case, bootstrapping to the rescue!
 
 ## So, what exactly is bootstrapping?
 
-Bootstrapping relies on being able to use the sample you have to generate equally likely samples (hence the term 'bootstrapping', as in pulling yourself up on your own bootstraps).
+Bootstrapping relies on being able to use the sample you have to generate equally likely samples (hence the term 'bootstrapping', as in pulling yourself by your own bootstraps).
 
 So, we generate lots (usually 1000s) of bootstrap samples from our data. We pretend that each of these is actually a new sample. We calculate the thing on it, and this forms a distribution we can use for whatever we want (getting p-values, confidence bounds, plotting etc)
 
@@ -88,22 +88,24 @@ The magic piece of this is how you generate the bootrap samples, and this is by 
 
 So, the process is as follows:
 1. Take your sample data, generate $n$ samples with replacement (of the same size of the original data).<details open><summary>Why does this work?</summary>
-For a full explanation see [this section](#why-does-it-work). In short, this sample data is the best representation we have of the population, so by redrawing samples with replacement, we're doing our best to simulate what would happen if we had to redraw the sample from the population. Sometimes, we'll draw some of the elements more than once, and sometimes not at all. In this way outliers are sometimes drawn, sometimes not, and sometimes drawn multiple times - this serves to stretch out this distribution.
-</details>
+For a full explanation see [this section](#why-does-it-work). In short, this sample data is the best representation we have of the population, so by redrawing samples with replacement, we're doing our best to simulate what would happen if we had to redraw the sample from the population. Sometimes, we'll draw some of the elements more than once, and sometimes not at all. In this way outliers are sometimes drawn, sometimes not, and sometimes drawn multiple times - this serves to stretch out this distribution.</details>
+
 1. For each of these samples, calculate the thing you care about.
 1. Use this however you want.
 
 
 ## An example in code
 
-The complexity of the `run_bootstrap` is seldom more complex than this.
+Below is some sample code for how to apply the bootstrap process to estimate the distribution and 90% confidence bounds for the mean value of a uniform distribution
+
+It's worth noting that the complexity of the `run_bootstrap` is seldom more complex than this for most applications (in my experience at least).
 
 ```python
 import numpy as np
 from tqdm import tqdm  # Just to get nice progress meters
 
 
-# A function which computes a measure (e.g. a mean value)
+# A function which computes a measure (in this case a mean value)
 def calculate_measure(data):
     return data.mean()
 
@@ -143,6 +145,12 @@ Nothing too surprising here:
 1. The expected value of this distribution from the bootstrap estimation is 0.508, where the true value is 0.5 (knowing what we know about the distribution the sample was drawn from)
 1. The 90% confidence bounds are wrapped tightly around 0.5. The interpretation for this is: "if we had to draw new samples from the population, and recalculate the mean, 90% of the time these would be between these two values"
 
+
+
+# The rest of the story
+1. Give some more examples on using it
+    1. A|B test (With p-values) 
+    1. 
 
 [^1] If my colleague ever reads this, and *doesn't* think it was a good idea, then just know I'm happy to take full responsibility for it.
 
