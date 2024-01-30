@@ -1,6 +1,8 @@
 ---
 layout: post
 title: "Intro to bootstrapping for confidence bounds"
+tags:
+- Bootstrapping
 ---
 
 I'll show you how to use bootstrapping, a powerful sampling technique which can be used to estimate confidence bounds, p-values and distributions for samples without the need to model (or understand) the underlying distributions.
