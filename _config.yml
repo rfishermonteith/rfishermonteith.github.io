@@ -1,5 +1,5 @@
 # Website settings
-url: "https://rfishy1.github.io/"
+url: "https://rfishermonteith.github.io/"
 
 # Internal nav
 nav:
@@ -15,7 +15,7 @@ nav:
 name: "Richard Fisher-Monteith"
 description: "The home page of Richard Fisher-Monteith."
 thumbnail_path: "profile-photos/richard-fisher-monteith-medium.jpg"
-website_repo_url: "https://github.com/rfishy1/rfishy.github.io"
+website_repo_url: "https://github.com/rfishermonteith/rfishermonteith.github.io"
 
 # URLs
 contact_urls:
@@ -24,7 +24,7 @@ contact_urls:
     label: "LinkedIn"
     icon: "linkedin-square"
   github:
-    url: "https://github.com/rfishy1/"
+    url: "https://github.com/rfishermonteith/"
     label: "GitHub"
     icon: "github-square"
   email:
@@ -42,7 +42,7 @@ sass:
   style: :compressed
 highlighter: rouge
 timezone: 'America/Los_Angeles'
-repository: rfishy1/rfishy.github.io
+repository: rfishermonteith/rfishermonteith.github.io
 
 # Plugins (GitHub Pages only support a few)
 gems:

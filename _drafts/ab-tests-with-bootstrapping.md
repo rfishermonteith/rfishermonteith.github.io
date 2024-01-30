@@ -39,7 +39,7 @@ Our marketing team has decided to try optimise this copy, to increase the number
 So, here are the important parts here:
 1. The control group will get the original copy ("Sign up...").
 1. The variant group will get the proposed copy ("Dive into...").
-1. Our conversion metric is the rate at which user's sign-up for the newsletter.
+1. Our conversion metric is the rate at which users sign-up for the newsletter.
 
 Right, let's create some synthetic data for this:
 
