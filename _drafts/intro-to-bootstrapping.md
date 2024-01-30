@@ -1,14 +1,16 @@
 ---
 layout: post
-title: "Intro to bootstrapping"
+title: "Intro to bootstrapping for confidence bounds"
 ---
 
-# Who is this for?
+I'll show you how to use bootstrapping, a powerful sampling technique which can be used to estimate confidence bounds, p-values and distributions for samples without the need to model (or understand) the underlying distributions.
+
+# Who is this post for?
 
 Have you ever needed to:
 1. Find confidence bounds for a weird/complex calculation?
 1. Needed to find p values for an A/B test with an unusual distribution or complex metric calculation?
-1. Needed to find p values for an A/B test with simple distributions and been too lazy to check what test to use?
+1. Needed to find p values for an A/B test with simple distributions and been too lazy to check what hypothesis test to use?
 
 
 If you answered yes to any of the above, then this post is for you!
@@ -23,11 +25,10 @@ In this post, I hope to:
 1. Discuss some of the risks and pitfalls.
 1. Refer to some good resources where you can learn more.
 
-
 ## A quick aside about why I fell in love with bootstrapping
 (if you just want get straight to the technical details, feel free to [jump ahead](#what-is-bootstrapping))
 
-Some years ago (reasonably early in my career - probably in 2018 or so), I was working on some kind of forecasting project, where we were attempting to forecast something like sales volumes or stock levels or occupancy levels or something, we came across an interesting quandry. We had very limited historic training data, and so had relatively little confidence in the forecasts. We used a collection of different predictive models (including ARIMA-style models, some linear and logistic regression ones, and eventually a NN), and blended the predictions.
+Some years ago (reasonably early in my career - probably in 2018 or so), when I was working on some kind of forecasting project, where we were attempting to forecast something like sales volumes or stock levels or occupancy levels or something, we came across an interesting quandry. We had very limited historic training data, and so had relatively little confidence in the forecasts. We used a collection of different predictive models (including ARIMA-style models, some linear and logistic regression ones, and eventually a NN), and blended the predictions.
 
 The issue was that we needed to explain to our client just how confident we were (or weren't) in the forecasts.
 
@@ -45,8 +46,6 @@ And that's where the story ended, for a few years.
 
 And then, in 2021 or 2022, I came across bootstrapping, and my life changed for good.
 
-</details>
-
 # What is bootstrapping
 
 We can phrase this in a few ways, at least one of which will make sense to you, depending on your background and experience (hopefully!):
@@ -54,16 +53,16 @@ We can phrase this in a few ways, at least one of which will make sense to you, 
 1. Bootstrapping is a non-parametric way to estimate a population measure from a sample.
 1. Bootstrapping is an algorithm which gives equally likely outcomes for some sampled outcome, as if you resampled.
 
-In short, bootstrapping is an approach (or algorithm) for estimating some metric of some population, based solely on the sample we have available.
+In short, bootstrapping is an approach (or algorithm) for estimating some measure of some population, based solely on the sample we have available.
 
 ## Some examples where bootstrapping may be helpful
 
-1. You've run an A|B test. What are the range of uplift values might we expect?<br>
+1. You've run an A|B test. What are the range of uplift values might you expect?<br>
 This is another way of saying: "if we ran this experiment over and over again, what range of uplift values would we expect to see?"
 1. We fit a model to some data, where the coefficients in the model have some physical interpretation. What range of coefficient values should we expect to see if we retrained the model on new data?
-1. We calculate some business metric (e.g. average cost per order) and like to know how much this might vary for the next month.
+1. We calculate some business metric (e.g. average cost per order) and would like to know how much this might vary for the next month.
 
-Hopefully you can see where this is going. Anytime we calculate a thing based on a sample of data from some population, and we're interested to know what the range of this thing is, then bootstrapping can help.
+Hopefully you can see where this is going. Anytime we calculate a thing based on a sample of data from some population, and we're interested to know what the distribution of this thing is, then bootstrapping can help.
 
 ## How would this traditionally be solved?
 
@@ -76,7 +75,7 @@ Specifically for the above:
 
 So, while there are sometimes approaches to solving these problems using some stats knowledge, sometimes we either can't, or don't know enough to know how.
 
-In these case, bootstrapping to the rescue!
+In these cases, bootstrapping to the rescue!
 
 ## So, what exactly is bootstrapping?
 
@@ -87,18 +86,20 @@ So, we generate lots (usually 1000s) of bootstrap samples from our data. We pret
 The magic piece of this is how you generate the bootrap samples, and this is by **sampling with replacement**.
 
 So, the process is as follows:
-1. Take your sample data, generate $n$ samples with replacement (of the same size of the original data).<details open><summary>Why does this work?</summary>
-For a full explanation see [this section](#why-does-it-work). In short, this sample data is the best representation we have of the population, so by redrawing samples with replacement, we're doing our best to simulate what would happen if we had to redraw the sample from the population. Sometimes, we'll draw some of the elements more than once, and sometimes not at all. In this way outliers are sometimes drawn, sometimes not, and sometimes drawn multiple times - this serves to stretch out this distribution.</details>
-
+1. Take your sample data, generate $n$ samples with replacement (of the same size of the original data).\*
 1. For each of these samples, calculate the thing you care about.
 1. Use this however you want.
+
+> \* Why does this work?
+> 
+> For a full explanation see [this section](#why-does-it-work). In short, this sample data is the best representation we have of the population, so by redrawing samples with replacement, we're doing our best to simulate what would happen if we had to redraw the sample from the population. Sometimes, we'll draw some of the elements more than once, and sometimes not at all. In this way outliers are sometimes drawn, sometimes not, and sometimes drawn multiple times - this serves to stretch out this distribution in a way that's consistent with our best guess for the data we'd get if we redrew from the population.
 
 
 ## An example in code
 
-Below is some sample code for how to apply the bootstrap process to estimate the distribution and 90% confidence bounds for the mean value of a uniform distribution
+Below is some sample code for how to apply the bootstrap process to estimate the distribution and 90% confidence bounds for the mean value of a uniform distribution.
 
-It's worth noting that the complexity of the `run_bootstrap` is seldom more complex than this for most applications (in my experience at least).
+It's worth noting that the complexity of the `run_bootstrap` function is seldom more complex than this for most applications (in my experience at least).
 
 ```python
 import numpy as np
@@ -149,7 +150,7 @@ Nothing too surprising here:
 
 # The rest of the story
 1. Give some more examples on using it
-    1. A|B test (With p-values) 
+    1. A\|B test (With p-values) 
     1. 
 
 [^1] If my colleague ever reads this, and *doesn't* think it was a good idea, then just know I'm happy to take full responsibility for it.
