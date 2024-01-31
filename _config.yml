@@ -49,3 +49,7 @@ gems:
   - jekyll-redirect-from
   - jekyll-sitemap
   - jekyll-paginate
+
+# Exclude code files
+exclude:
+  - "*.py"
