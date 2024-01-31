@@ -52,7 +52,38 @@ A = 1
 
 
 
+```python
+{% include_relative  code_snippets/test_code.py %}
+```
 
 
+# The traditional approach
+
+Okay, so if we didn't have bootstrapping as a tool, how would we go about solving this the traditional way?
+For A/B tests, we always use some kind of hypothesis test. 
+
+The statistical reasoning we follow is this:
+- We propose a null hypothesis (the difference between the performance of the two variants is due to chance - i.e. our hypothesis is that there is no cause, hence *null*)
+- We test how likely this null hypothesis is (this is the p-value). If it's sufficiently low, then we can reject this null hypothesis. Having rejected the null hypothesis, we assert that our hypothesis (that the difference in performance between the variants is due to the intervention).
+
+So, we need a traditional approach to finding the probability of the data given the null hypothesis.
+
+We reach into our toolbox of statistical tests for an appropriate test (or we reach for Google or ChatGPT).
+
+In this case a 1-tailed test of proportions (TODO: check this)
+
+(TODO: apply this)
 
 
+# The bootstrapping approach
+
+Instead, we can use bootstrapping to estimate this directly:
+
+(TODO:
+
+1. Explain that we're really just interested in whether we'd observe the same outcome if we repeated the test over and over. The best info we have of whether this would happen is our sample, so we bootstrap it to find out.
+1. Each bootstrap sample is equivalent (i.e. our best guess) of what running the experiment again would yield
+1. The p-value is then just the portion of these where the outcome holds (i.e. A > B) (TODO: I'm not sure I fully understand why - surely this is not really P(obs|H_null), but rather something like P(obd))
+
+
+)
