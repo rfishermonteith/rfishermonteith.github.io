@@ -7,45 +7,46 @@ tags:
 - A/B tests
 ---
 
-In this post I'll give a hands-on walkthrough showing you how to analyse the impact of an A/B test using bootstrap sampling. I'll also compare this to the traditional approaches, to give you confidence that bootstrapping is working the way we expect.
+In this post I'll give a hands-on walkthrough showing you how to analyse the **impact of an A/B test using bootstrap sampling**. I'll also compare this to the traditional approach, to give you confidence that bootstrapping is working the way we expect.
 
 # Intro
 
-For a full introduction to bootstrapping, have a look at my post [here](here).
+For a full introduction to bootstrapping, have a look at my post [here]({% post_url 2024-02-02-intro-to-bootstrapping %}). [[TODO: update this link]]
+[here]({% link _drafts/intro-to-bootstrapping.md %})
 
 In this post we will:
-1. Give a generic A/B test problem statement
-1. Give a concrete example of this, with some data
-1. Explain what kind of answer we're looking for
-1. Give the traditional solution to the problem
-1. Do it the bootstrapping way
-1. Compare the two approaches
+1. Give a generic A/B test problem statement.
+1. Give a concrete example of this, with some data.
+1. Explain what kind of answer we're looking for.
+1. Give the traditional solution to the problem.
+1. Do it the bootstrapping way.
+1. Compare the two approaches.
 
 # A/B tests generic problem statement
 
 The generic problem statement for A/B test analysis is something like this:
 - We've run an A/B test, exposing some people to variant A, and some to variant B (also called the control and treatment).
-- These users went on to do something (the objective).
-- We'd like to know whether the intervention (the difference between the control and treatment) caused an increase in this objective (and perhaps we'd also like to know how big of an increase it caused).
+- Some of these users went on to do something (the conversion goal).
+- We'd like to know whether the intervention (the difference between the control and treatment) caused an increase in this goal (and perhaps we'd also like to know how big an increase it caused).
 
 # A concrete A/B testing problem statement
 
 Let's create a simple scenario here.
 
-In our Sushi delivery app, we offer users a discount code if they sign up for our newsletter. We currently show them a message with the text "Sign up to our newsletter for 5% off your next order".
+In our Sushi delivery app (Fishful Thinking), we offer users a discount code if they sign up for our newsletter. We currently show them a message with the text "Sign up to our newsletter for 5% off your next order".
 
 Our marketing team has decided to try optimise this copy, to increase the number of people who sign up for the newsletter. They propose "Dive into exclusive deals by subscribing to our newsletter – our fin-tastic discount code will swim straight into your inbox, creating a wave of savings!" [Thanks ChatGPT].
 
-So, here are the important parts here:
+So, here are the important parts:
 1. The control group will get the original copy ("Sign up...").
 1. The treatment group will get the proposed copy ("Dive into...").
-1. Our conversion metric is the rate at which users sign-up for the newsletter.
+1. Our conversion goal is the rate at which users sign-up for the newsletter.
 
 Right, let's create some synthetic data for this:
 
 ```python
 import numpy as np
-from np.random import random
+from numpy.random import random
 from tqdm import tqdm
 
 np.random.seed(2024)  # Set the seed for reproducibility
@@ -65,36 +66,65 @@ samples_control = random(n_group) <= conversion_control
 samples_treatment = random(n_group) <= conversion_treatment
 ```
 
-Right, so we have some (synthetic data). What kind of answer do we want from it?
+Right, so we have some (synthetic) data. What kind of answer do we want from it?
 
-Basically, we want to know whether the percentage of people in the treatment group who signed up is greater than the percentage of people in the control group, and if so, what the probability is of this occuring by chance (the p-value).
+Basically, we want to know whether the percentage of people in the treatment group who signed up is greater than the percentage of people in the control group who did so, and if so, what the probability is of this occuring by chance (the p-value).
 
 The first part of this is easy, we just calculate the uplift directly:
 ```python
 print(f"Uplift: {samples_treatment.mean()/samples_control.mean()}")
 ```
+```sh
+Uplift: 54.29%
+```
 
-Good. So there appears to be an uplift.
+Good. So there appears to be an uplift (and a big one!).
 
 Now, how likely were we to see this uplift if it were caused by chance (i.e. both variants have the same likelihood of conversion, but more users in the treatment *just happened* to convert?)
 
+# The traditional approach
+
+Okay, so if we didn't have bootstrapping as a tool, how would we go about solving this the traditional way?
+For A/B tests, we always use some kind of hypothesis test. 
+
+The statistical reasoning we follow is this:
+- We propose a null hypothesis (that the difference between the performance of the two variants is due to chance - i.e. our hypothesis is that there is no cause, hence *null*)
+- We test how likely this null hypothesis is (this is the p-value). If it's sufficiently low, then we can reject this null hypothesis. Having rejected the null hypothesis, we assert that our hypothesis is true (that the difference in performance between the variants is due to the intervention).
+
+So, we need a traditional approach to finding the probability of the data given the null hypothesis.
+
+We reach into our toolbox of statistical tests for an appropriate test (or we reach for Google or ChatGPT).
+
+In this case a 1-tailed test of proportions (TODO: check this)
+
+I usually check (or just do) this on a website like https://uk.surveymonkey.com/mp/ab-testing-significance-calculator/, since it's usually quicker than finding the right code to use.
 
 ```python
-
-
-## The normal (boring) way - done after some Googling and comparing to this site:
-# https://uk.surveymonkey.com/mp/ab-testing-significance-calculator/
-
-# import statsmodels.stats.proportion
-# statsmodels.stats.proportion.proportions_ztest(sum(samples_treatment)-sum(samples_control), n_group, alternative="larger")
-
 from scipy.stats import ttest_ind
 
 t, p = ttest_ind(samples_control, samples_treatment)
 p_val_ttest = p / 2  # To account for 1 sided test
-print(f"The ttest p_val: {p_val_ttest}")
+print(f"The ttest p_val: {p_val_ttest:.2}")
+```
+```sh
+The ttest p_val: 0.0014
+```
+
+So, that was reasonably easy (as long as we knew what test to use).
+
+# The bootstrapping approach
+
+Another approach is to use bootstrapping to estimate this directly.
+
+To give some more intuition for what this is doing:
+- The p-value (from a frequentist perspective) is the frequency that we'd observe an effect size of this magnitude or larger, if these samples are drawn from the same distribution (i.e. that there is no effect).
+- We can answer something slightly different (but equivalent). We can answer how likely it is that we would see a positive effect size if we repeated this experiment (TODO: add a link to where I or Jim discuss this).
+- So, we generate bootstrap samples to simulate repeating the experiment:
+  - Each bootstrap sample is our best guess of what running the experiment again would yield.
+  - 
 
 
+```python
 ## Now we just bootstrap it
 num_iter = 1000
 res = []
@@ -118,47 +148,32 @@ fig.update_layout(barmode='overlay')
 fig.update_traces(opacity=0.75)
 fig.show()
 
+```
+
+
+```python
+
 ## Get some confidence bounds
 conf_bounds = np.quantile(np.divide(bootstrap_mean_treatment, bootstrap_mean_control), [0.05, 0.95])
 print(f"90% confidence bounds: {conf_bounds}")
 
 ```
 
+```sh
+90% confidence bounds: [1.20979938 2.        ]
+```
 
+# Some interesting things to note about bootstrapping for confidence bounds and p-values
 
+1. The p-value you generate will only a precision of the inverse of the number of bootstrapping iterations you use. So, if you'd like to evaluate the significance at a level of 0.05, you'll need at least 20 simulations (and you should always aim for far, far more)
+1. Confidence intervals are similarly affected, since they're just the quantiles of the bootstrapped measures, so having more bootstrap iterations will make these a little smoother (especially if you want more granular confidence bounds or distributions of the measure).
 
 ```python
 {% include_relative  code_snippets/test_code.py %}
 ```
 
 
-# The traditional approach
-
-Okay, so if we didn't have bootstrapping as a tool, how would we go about solving this the traditional way?
-For A/B tests, we always use some kind of hypothesis test. 
-
-The statistical reasoning we follow is this:
-- We propose a null hypothesis (the difference between the performance of the two variants is due to chance - i.e. our hypothesis is that there is no cause, hence *null*)
-- We test how likely this null hypothesis is (this is the p-value). If it's sufficiently low, then we can reject this null hypothesis. Having rejected the null hypothesis, we assert that our hypothesis (that the difference in performance between the variants is due to the intervention).
-
-So, we need a traditional approach to finding the probability of the data given the null hypothesis.
-
-We reach into our toolbox of statistical tests for an appropriate test (or we reach for Google or ChatGPT).
-
-In this case a 1-tailed test of proportions (TODO: check this)
-
-(TODO: apply this)
-
-
-# The bootstrapping approach
-
-Instead, we can use bootstrapping to estimate this directly:
-
-(TODO:
-
-1. Explain that we're really just interested in whether we'd observe the same outcome if we repeated the test over and over. The best info we have of whether this would happen is our sample, so we bootstrap it to find out.
-1. Each bootstrap sample is equivalent (i.e. our best guess) of what running the experiment again would yield
-1. The p-value is then just the portion of these where the outcome holds (i.e. A > B) (TODO: I'm not sure I fully understand why - surely this is not really P(obs|H_null), but rather something like P(obd))
-
-
-)
+# Useful links:
+1. https://statisticsbyjim.com/hypothesis-testing/hypothesis-tests-confidence-intervals-levels/ (explains that the p-value and confidence intervals always agree)
+1. https://statisticsbyjim.com/hypothesis-testing/bootstrapping/ (describes bootstrapping and confidence bounds)
+1. 
