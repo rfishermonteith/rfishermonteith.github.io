@@ -97,13 +97,12 @@ We reach into our toolbox of statistical tests for an appropriate test (or we re
 
 In this case a 1-tailed test of proportions (TODO: check this)
 
-I usually check (or just do) this on a website like https://uk.surveymonkey.com/mp/ab-testing-significance-calculator/, since it's usually quicker than finding the right code to use.
+I usually check (or just do) this on a website like [https://uk.surveymonkey.com/mp/ab-testing-significance-calculator/](https://uk.surveymonkey.com/mp/ab-testing-significance-calculator/) (most plaforms which offer any kind of A/B testing give some calculators), since it's usually quicker than finding the right code to use.
 
 ```python
 from scipy.stats import ttest_ind
 
-t, p = ttest_ind(samples_control, samples_treatment)
-p_val_ttest = p / 2  # To account for 1 sided test
+_, p_val_ttest = ttest_ind(samples_control, samples_treatment, alternative="less")
 print(f"The ttest p_val: {p_val_ttest:.2}")
 ```
 ```sh
@@ -116,17 +115,24 @@ So, that was reasonably easy (as long as we knew what test to use).
 
 Another approach is to use bootstrapping to estimate this directly.
 
-To give some more intuition for what this is doing:
+To give some more intuition for what this is doing (you can also check out my full post [here]({% post_url 2024-02-02-intro-to-bootstrapping %}). [[TODO: update this link]]
+[here]({% link _drafts/intro-to-bootstrapping.md %})):
 - The p-value (from a frequentist perspective) is the frequency that we'd observe an effect size of this magnitude or larger, if these samples are drawn from the same distribution (i.e. that there is no effect).
-- We can answer something slightly different (but equivalent). We can answer how likely it is that we would see a positive effect size if we repeated this experiment (TODO: add a link to where I or Jim discuss this).
+- We can answer something slightly different (but equivalent). We can answer how likely it is that we would see a positive effect size if we repeated this experiment over and over again.
+  - So, instead of calculating the p-value, we calculate the confidence interval, $\alpha$.
+  - We can then convert this to the p-value using $p=1-\alpha$ (see [this post](https://statisticsbyjim.com/hypothesis-testing/hypothesis-tests-confidence-intervals-levels/) by Jim Frost - these are not the same thing, but they always agree - we'll see an example of this below).
 - So, we generate bootstrap samples to simulate repeating the experiment:
   - Each bootstrap sample is our best guess of what running the experiment again would yield.
-  - 
+  - This distribution over possible outcomes gives our best guess for the range of uplift values we'd expect to see in the wild.
+  - We can then draw confidence bounds from this distribution, and then extract the p-value from these.
+
+
+Let's look at some code for how this works.
 
 
 ```python
 ## Now we just bootstrap it
-num_iter = 1000
+num_iter = 10000
 res = []
 bootstrap_mean_control = []
 bootstrap_mean_treatment = []
@@ -150,6 +156,10 @@ fig.show()
 
 ```
 
+The key observation here is that we look at what percentage of the bootstrap samples led us to seeing the control beating the variant. This is equivalent to the p-value.
+
+We can get a little more useful info out of the bootstrap though - we can get confidence bounds. These will be interpreted as the range of true uplift value 
+
 
 ```python
 
@@ -160,8 +170,20 @@ print(f"90% confidence bounds: {conf_bounds}")
 ```
 
 ```sh
-90% confidence bounds: [1.20979938 2.        ]
+90% confidence bounds: [1.21428571 1.98275862]
 ```
+
+So, we're 90% confident that the true uplift value lies between 21% and 98%.
+
+We can also plot this, which gives us (in my opinion) far more useful information about the performance of the A/B test.
+
+TODO: add the chart showing the distribution of uplift values, and explain how to interpret this
+
+TODO: add another chart showing the boxplot of the 90% CI, and how to interpret this
+
+# Comparison between bootstrapping and the traditional way
+
+
 
 # Some interesting things to note about bootstrapping for confidence bounds and p-values
 
@@ -174,6 +196,6 @@ print(f"90% confidence bounds: {conf_bounds}")
 
 
 # Useful links:
-1. https://statisticsbyjim.com/hypothesis-testing/hypothesis-tests-confidence-intervals-levels/ (explains that the p-value and confidence intervals always agree)
-1. https://statisticsbyjim.com/hypothesis-testing/bootstrapping/ (describes bootstrapping and confidence bounds)
+1. [https://statisticsbyjim.com/hypothesis-testing/hypothesis-tests-confidence-intervals-levels/](https://statisticsbyjim.com/hypothesis-testing/hypothesis-tests-confidence-intervals-levels/) - explains that the p-value and confidence intervals always agree
+1. [https://statisticsbyjim.com/hypothesis-testing/bootstrapping/](https://statisticsbyjim.com/hypothesis-testing/bootstrapping/) - describes bootstrapping and confidence bounds
 1. 
