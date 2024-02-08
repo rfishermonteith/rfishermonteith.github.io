@@ -24,16 +24,16 @@ In this post we will:
 
 # A/B tests generic problem statement
 
-The generic problem statement for A/B test analysis is something like this:
+The generic problem statement for an A/B test analysis is something like this:
 - We've run an A/B test, exposing some people to variant A, and some to variant B (also called the control and treatment).
 - Some of these users went on to do something (the conversion goal).
 - We'd like to know whether the intervention (the difference between the control and treatment) caused an increase in this goal (and perhaps we'd also like to know how big an increase it caused).
 
 # A concrete A/B testing problem statement
 
-Let's create a simple scenario here.
+Let's create a simple scenario here to use as a practical example for the rest of the post .
 
-In our Sushi delivery app (Fishful Thinking), we offer users a discount code if they sign up for our newsletter. We currently show them a message with the text "Sign up to our newsletter for 5% off your next order".
+In our sushi delivery app (Fishful Thinking), we offer users a discount code if they sign up for our newsletter. We currently show them a message with the text "Sign up to our newsletter for 5% off your next order".
 
 Our marketing team has decided to try optimise this copy, to increase the number of people who sign up for the newsletter. They propose "Dive into exclusive deals by subscribing to our newsletter – our fin-tastic discount code will swim straight into your inbox, creating a wave of savings!" [Thanks ChatGPT].
 
@@ -68,7 +68,7 @@ samples_treatment = random(n_group) <= conversion_treatment
 
 Right, so we have some (synthetic) data. What kind of answer do we want from it?
 
-Basically, we want to know whether the percentage of people in the treatment group who signed up is greater than the percentage of people in the control group who did so, and if so, what the probability is of this occuring by chance (the p-value).
+Basically, we want to know whether the percentage of people in the treatment group who signed up is greater than the percentage of people in the control group who did so, and if so, is this robust (i.e. would we expect this to hold if we roll it out to all users?). The way we test this is by estimating the probability that this increase occured by chance (the p-value).
 
 The first part of this is easy, we just calculate the uplift directly:
 ```python
@@ -157,16 +157,20 @@ fig.show()
 ```
 
 The key observation here is that we look at what percentage of the bootstrap samples led us to seeing the control beating the variant. This is equivalent to the p-value.
+We can also plot this, which gives us (in my opinion) far more useful information about the performance of the A/B test.
 
-We can get a little more useful info out of the bootstrap though - we can get confidence bounds. These will be interpreted as the range of true uplift value 
+{% include figure.html path='/blog/ab-tests-with-bootstrapping-histogram.png' %}
 
+What this shows is our confidence about the possible values of the true uplift. We can see it's centered around 1.5. But, it also shows how likely it is to be nearer to 1, or 2, or 2.5.
+
+The reason I think this is more useful that a p-value is that instead of just saying whether a positive uplift is likely due to the intervention, it also shows us the magnitude of the probably uplift.
+
+We can go a step further (and should!) to extract from this distribution the confidence intervals. These will be interpreted as the likely range of true uplift values.
 
 ```python
-
 ## Get some confidence bounds
 conf_bounds = np.quantile(np.divide(bootstrap_mean_treatment, bootstrap_mean_control), [0.05, 0.95])
 print(f"90% confidence bounds: {conf_bounds}")
-
 ```
 
 ```sh
@@ -175,19 +179,28 @@ print(f"90% confidence bounds: {conf_bounds}")
 
 So, we're 90% confident that the true uplift value lies between 21% and 98%.
 
-We can also plot this, which gives us (in my opinion) far more useful information about the performance of the A/B test.
+I'd usually plot this visually, as a really helpful plot to show to stakeholders, because we can use it to reason about the impact of rolling out this A/B test.
 
-TODO: add the chart showing the distribution of uplift values, and explain how to interpret this
+{% include figure.html path='/blog/ab-tests-with-bootstrapping-ci.png' %}
 
-TODO: add another chart showing the boxplot of the 90% CI, and how to interpret this
+The useful info this contains:
+- We're 90% confident that the uplift is positive (the entire bar is green).
+- We get a sense of the size of the uplift (quite big).
+
+Out of interest, here's how we'd plot it if the 90% CI includes 0% (which would indicate that the p-value > 0.05).
+
+{% include figure.html path='/blog/ab-tests-with-bootstrapping-ci-example.png' %}
+
+The relative sizes of the red and green bars can be used to make an educated call on whether to roll out the variant or not (going beyond p-values and relying entirely on confidence intervals is beyond the scope of this post, but I may cover it in future).
 
 # Comparison between bootstrapping and the traditional way
 
+So, we managed to replicate the p-value we got from the traditional approach using bootstrapping. But, what additional benefits did we 
 
 
 # Some interesting things to note about bootstrapping for confidence bounds and p-values
 
-1. The p-value you generate will only a precision of the inverse of the number of bootstrapping iterations you use. So, if you'd like to evaluate the significance at a level of 0.05, you'll need at least 20 simulations (and you should always aim for far, far more)
+1. The p-value you generate will only have a precision of the inverse of the number of bootstrapping iterations you use. So, if you'd like to evaluate the significance at a level of 0.05, you'll need at least 20 simulations (and you should always aim for far, far more, given the randomness aspect that affects this)
 1. Confidence intervals are similarly affected, since they're just the quantiles of the bootstrapped measures, so having more bootstrap iterations will make these a little smoother (especially if you want more granular confidence bounds or distributions of the measure).
 
 ```python
