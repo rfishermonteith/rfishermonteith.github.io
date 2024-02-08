@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Intro to bootstrapping for confidence bounds"
+date: "2024-02-08 18:00"
 tags:
 - Bootstrapping
 ---

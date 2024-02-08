@@ -1,6 +1,8 @@
 ---
 layout: post
 title: "A/B test analysis with bootstrapping"
+date: "2024-02-08 19:00"
+thumbnail_path: '/blog/ab-tests-with-bootstrapping-ci-example.png'
 tags:
 - Bootstrapping
 - Python
@@ -11,8 +13,8 @@ In this post I'll give a hands-on walkthrough showing you how to analyse the **i
 
 # Intro
 
-For a full introduction to bootstrapping, have a look at my post [here]({% post_url 2024-02-02-intro-to-bootstrapping %}). [[TODO: update this link]]
-[here]({% link _drafts/intro-to-bootstrapping.md %})
+For a full introduction to bootstrapping, have a look at my post [here]({% post_url 2024-01-13-intro-to-bootstrapping %}).  
+
 
 In this post we will:
 1. Give a generic A/B test problem statement.
@@ -25,7 +27,7 @@ In this post we will:
 # A/B tests generic problem statement
 
 The generic problem statement for an A/B test analysis is something like this:
-- We've run an A/B test, exposing some people to variant A, and some to variant B (also called the control and treatment).
+- We've run an A/B test, exposing some people to variant A, and some to variant B (also called the control and treatment groups).
 - Some of these users went on to do something (the conversion goal).
 - We'd like to know whether the intervention (the difference between the control and treatment) caused an increase in this goal (and perhaps we'd also like to know how big an increase it caused).
 
@@ -72,15 +74,19 @@ Basically, we want to know whether the percentage of people in the treatment gro
 
 The first part of this is easy, we just calculate the uplift directly:
 ```python
-print(f"Uplift: {samples_treatment.mean()/samples_control.mean()}")
+print(f"Control group conversion rate: {samples_control.mean():.1%}")
+print(f"Treatment group conversion rate: {samples_treatment.mean():.1%}")
+print(f"Uplift: {samples_treatment.mean()/samples_control.mean()-1:.2%}")
 ```
 ```sh
+Control group conversion rate: 7.0%
+Treatment group conversion rate: 10.8%
 Uplift: 54.29%
 ```
 
-Good. So there appears to be an uplift (and a big one!).
+Good. So there appears to be an uplift (and a big one!). From the experiment, we've seen that 7% of our users in the control group sign up, but when we show them the new copy, 10.8% sign up, a 54% increase.
 
-Now, how likely were we to see this uplift if it were caused by chance (i.e. both variants have the same likelihood of conversion, but more users in the treatment *just happened* to convert?)
+Now, this is a fairly small sample - how likely were we to see this uplift if it were caused by chance (i.e. both variants have the same likelihood of conversion, but more users in the treatment *just happened* to convert?)
 
 # The traditional approach
 
@@ -88,16 +94,17 @@ Okay, so if we didn't have bootstrapping as a tool, how would we go about solvin
 For A/B tests, we always use some kind of hypothesis test. 
 
 The statistical reasoning we follow is this:
-- We propose a null hypothesis (that the difference between the performance of the two variants is due to chance - i.e. our hypothesis is that there is no cause, hence *null*)
-- We test how likely this null hypothesis is (this is the p-value). If it's sufficiently low, then we can reject this null hypothesis. Having rejected the null hypothesis, we assert that our hypothesis is true (that the difference in performance between the variants is due to the intervention).
+- We propose a null hypothesis (that the difference between the performance of the two variants is due to chance - i.e. our hypothesis is that there is no cause, hence *null*). This is equivalent to the hypothesis that the result are drawn from the same distribution.
+- We test how likely this null hypothesis is (this is the p-value). If it's sufficiently low, then we can reject this null hypothesis. 
+- Having rejected the null hypothesis, we assert that our hypothesis is true (that the difference in performance between the variants is due to the intervention).
 
 So, we need a traditional approach to finding the probability of the data given the null hypothesis.
 
 We reach into our toolbox of statistical tests for an appropriate test (or we reach for Google or ChatGPT).
 
-In this case a 1-tailed test of proportions (TODO: check this)
+In this case a 1-tailed t-test.
 
-I usually check (or just do) this on a website like [https://uk.surveymonkey.com/mp/ab-testing-significance-calculator/](https://uk.surveymonkey.com/mp/ab-testing-significance-calculator/) (most plaforms which offer any kind of A/B testing give some calculators), since it's usually quicker than finding the right code to use.
+I usually check (or just do) this on a website like <https://abtestguide.com/calc/> (most plaforms which offer any kind of A/B testing give some calculators), since it's usually quicker than finding the right code to use.
 
 ```python
 from scipy.stats import ttest_ind
@@ -109,16 +116,17 @@ print(f"The ttest p_val: {p_val_ttest:.2}")
 The ttest p_val: 0.0014
 ```
 
-So, that was reasonably easy (as long as we knew what test to use).
+So, that was reasonably easy (as long as we knew what test to use). In my case I compared the value against an online calculator to be sure I got the maths right.
 
 # The bootstrapping approach
 
 Another approach is to use bootstrapping to estimate this directly.
 
-To give some more intuition for what this is doing (you can also check out my full post [here]({% post_url 2024-02-02-intro-to-bootstrapping %}). [[TODO: update this link]]
-[here]({% link _drafts/intro-to-bootstrapping.md %})):
+To give some more intuition for what this is doing (you can also check out my full post [here]({% post_url 2024-01-13-intro-to-bootstrapping %})):
 - The p-value (from a frequentist perspective) is the frequency that we'd observe an effect size of this magnitude or larger, if these samples are drawn from the same distribution (i.e. that there is no effect).
-- We can answer something slightly different (but equivalent). We can answer how likely it is that we would see a positive effect size if we repeated this experiment over and over again.
+- The p-value is Pr(d\|H_0)$, the probability of the data sample, given the null hypothesis.
+- In practice, when we reject the null hypothesis, we assert our alternate hypothesis. Roughly (i.e. in practice), we're saying that $p_0 = 1-p_{alt}$ (i.e. as the null hypothesis becomes more likely, our alternative hypothesis becomes less likely).
+- So, we can answer something slightly different (but equivalent). We can answer how likely it is that we would see a positive effect size if we repeated this experiment over and over again.
   - So, instead of calculating the p-value, we calculate the confidence interval, $\alpha$.
   - We can then convert this to the p-value using $p=1-\alpha$ (see [this post](https://statisticsbyjim.com/hypothesis-testing/hypothesis-tests-confidence-intervals-levels/) by Jim Frost - these are not the same thing, but they always agree - we'll see an example of this below).
 - So, we generate bootstrap samples to simulate repeating the experiment:
@@ -131,7 +139,6 @@ Let's look at some code for how this works.
 
 
 ```python
-## Now we just bootstrap it
 num_iter = 10000
 res = []
 bootstrap_mean_control = []
@@ -156,7 +163,14 @@ fig.show()
 
 ```
 
-The key observation here is that we look at what percentage of the bootstrap samples led us to seeing the control beating the variant. This is equivalent to the p-value.
+```sh
+100%|██████████| 10000/10000 [00:00<00:00, 16228.66it/s]
+bootstrap p_val (with 10000 iterations): 0.0017
+```
+
+So, we get a p-value of 0.0017, reasonably close to the p-value calculated from the traditional approach (0.0014).
+
+The key observation here is that we look at what percentage of the bootstrap samples led us to seeing the control beating (or at least tieing with) the variant. This is equivalent to the p-value.
 We can also plot this, which gives us (in my opinion) far more useful information about the performance of the A/B test.
 
 {% include figure.html path='/blog/ab-tests-with-bootstrapping-histogram.png' %}
@@ -179,7 +193,15 @@ print(f"90% confidence bounds: {conf_bounds}")
 
 So, we're 90% confident that the true uplift value lies between 21% and 98%.
 
-I'd usually plot this visually, as a really helpful plot to show to stakeholders, because we can use it to reason about the impact of rolling out this A/B test.
+Interestingly, the true value of the uplift (10%) is outside of the 90% confidence bounds. This is because:
+1. The sample size (1000) is reasonably small.
+1. We were "unlucky" with the specific samples we generated.
+
+You can try changing the seed or increasing the sample size to see what effect this has on the conclusions.
+
+That the true value is outside our confidence bounds should instill a whole lot of caution in how we approach these tests (and stats in general) - we're just trying to do the best we can, without knowing the truth of the situation. It's worth adding that the traditional approach has led us to the same conclusions - it's just the case that we've been unlucky with the sample that was drawn. You can look into statistical power, if you're interested in understanding how to design A/B tests to maximally avoid these kinds of situations.
+
+I'd usually plot these confidence bounds visually, as a really helpful plot to show to stakeholders, because we can use it to reason about the likely impact of rolling out this A/B test.
 
 {% include figure.html path='/blog/ab-tests-with-bootstrapping-ci.png' %}
 
@@ -193,9 +215,13 @@ Out of interest, here's how we'd plot it if the 90% CI includes 0% (which would 
 
 The relative sizes of the red and green bars can be used to make an educated call on whether to roll out the variant or not (going beyond p-values and relying entirely on confidence intervals is beyond the scope of this post, but I may cover it in future).
 
-# Comparison between bootstrapping and the traditional way
+# Conclusion
 
-So, we managed to replicate the p-value we got from the traditional approach using bootstrapping. But, what additional benefits did we 
+So, we managed to (closely) replicate the p-value we got from the traditional approach using bootstrapping. Let's compare:
+- Both approaches gave us similar test results - we feel confident rolling out the variant.
+- For the traditional approach, we needed to understand the nature of the measure and distributions before know which hypothesis test to apply.
+- For bootstrapping, it doesn't matter, we just run the procedure.
+- For bootstrapping, we also get confidence intervals and a distribution of the likely uplift values to interpret.
 
 
 # Some interesting things to note about bootstrapping for confidence bounds and p-values
@@ -203,12 +229,7 @@ So, we managed to replicate the p-value we got from the traditional approach usi
 1. The p-value you generate will only have a precision of the inverse of the number of bootstrapping iterations you use. So, if you'd like to evaluate the significance at a level of 0.05, you'll need at least 20 simulations (and you should always aim for far, far more, given the randomness aspect that affects this)
 1. Confidence intervals are similarly affected, since they're just the quantiles of the bootstrapped measures, so having more bootstrap iterations will make these a little smoother (especially if you want more granular confidence bounds or distributions of the measure).
 
-```python
-{% include_relative  code_snippets/test_code.py %}
-```
-
 
 # Useful links:
-1. [https://statisticsbyjim.com/hypothesis-testing/hypothesis-tests-confidence-intervals-levels/](https://statisticsbyjim.com/hypothesis-testing/hypothesis-tests-confidence-intervals-levels/) - explains that the p-value and confidence intervals always agree
-1. [https://statisticsbyjim.com/hypothesis-testing/bootstrapping/](https://statisticsbyjim.com/hypothesis-testing/bootstrapping/) - describes bootstrapping and confidence bounds
-1. 
+1. <https://statisticsbyjim.com/hypothesis-testing/hypothesis-tests-confidence-intervals-levels/> - explains that the p-value and confidence intervals always agree
+1. <https://statisticsbyjim.com/hypothesis-testing/bootstrapping/> - describes bootstrapping and confidence bounds
