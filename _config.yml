@@ -41,7 +41,7 @@ sass:
   sass_dir: "/assets/css"
   style: :compressed
 highlighter: rouge
-timezone: 'America/Los_Angeles'
+timezone: 'Europe/London'
 repository: rfishermonteith/rfishermonteith.github.io
 
 # Plugins (GitHub Pages only support a few)
