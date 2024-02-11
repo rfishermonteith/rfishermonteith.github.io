@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Intro to bootstrapping for confidence bounds"
-date: "2024-02-09 06:00"
+date: "2024-02-11 21:00"
 thumbnail_path: 'blog/2024-02-13-intro-to-bootstrapping/thumbnail.png'
 tags:
 - Bootstrapping

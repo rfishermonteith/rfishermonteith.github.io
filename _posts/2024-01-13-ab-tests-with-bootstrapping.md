@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "A/B test analysis with bootstrapping"
-date: "2024-02-09 07:00"
+date: "2024-02-11 21:30"
 thumbnail_path: 'blog/2024-02-13-ab-tests-with-bootstrapping/ci-example.png'
 tags:
 - Bootstrapping
