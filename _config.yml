@@ -45,7 +45,7 @@ timezone: 'Europe/London'
 repository: rfishermonteith/rfishermonteith.github.io
 
 # Plugins (GitHub Pages only support a few)
-gems:
+plugins:
   - jekyll-redirect-from
   - jekyll-sitemap
   - jekyll-paginate
