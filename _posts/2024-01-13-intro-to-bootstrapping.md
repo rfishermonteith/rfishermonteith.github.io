@@ -171,6 +171,6 @@ Have a look at [my post on using bootstrapping to analyse A/B tests]({% post_url
 
 # Footnotes
 
-[^1] If my colleague ever reads this, and *doesn't* think it was a good idea, then just know I'm happy to take full responsibility for it.
+[^1]: If my colleague ever reads this, and *doesn't* think it was a good idea, then just know I'm happy to take full responsibility for it.
 
-[^2] See [this post](https://medium.com/@jcatankard_76170/linear-regression-parameter-confidence-intervals-228f0be5ea82) by Josh Tankard for some sleuthing on the matter
+[^2]: See [this post](https://medium.com/@jcatankard_76170/linear-regression-parameter-confidence-intervals-228f0be5ea82) by Josh Tankard for some sleuthing on the matter
