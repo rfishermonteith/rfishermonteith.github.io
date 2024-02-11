@@ -202,12 +202,16 @@ You can use this in a wide range of settings - whenever you don't have easy acce
 
 Have a look at [my post on using bootstrapping to analyse A/B tests]({% post_url 2024-01-13-ab-tests-with-bootstrapping %}) for another use case. I'll add some more examples in future.
 
+If you have other good resources for introductions to bootstrapping, please let me know in the comments!
+
 # Useful links
 
 1. <https://statisticsbyjim.com/hypothesis-testing/bootstrapping/><br>
 This describes bootstrapping and confidence bounds in general (it's a very useful website for stats for practitioners).
 1. <https://machinelearningmastery.com/a-gentle-introduction-to-the-bootstrap-method/><br>
 Another gentle introduction to bootstrapping.
+1. <https://erikjanvankesteren.nl/blog/2018-03-01-baron-bootstrap.html><br>
+Yet another gentle introduction[^3].
 1. <https://en.wikipedia.org/wiki/Bootstrapping_(statistics)/><br>
 The Wikipedia entry for bootstrapping is quite useful. It also includes some helpful tricks, for example the smoothed bootstrap.
 1. <https://stats.stackexchange.com/questions/26088/explaining-to-laypeople-why-bootstrapping-works><br>
@@ -216,3 +220,5 @@ This Cross Validated question has some really nice intuitive explanations of why
 This Cross Validated question gives a more thorough treatment of the same question as above (although admittedly most of it went over my head).
 
 # Footnotes
+
+[^3]: When I was first learning about bootstrap sampling (circa 2021) I'm fairly certain there was a really wonderful website/blog (by someone from the Netherlands - I think). I recall it had fantastic intuitive explanations. I found Erik's post while I was searching for bootstrapping blog posts by Dutch people. It's good, but unfortunately not the one I was looking for! If you know what I might be looking for, please let me know.
