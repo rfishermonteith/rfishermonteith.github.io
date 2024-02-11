@@ -34,13 +34,16 @@ In this post, I hope to:
 ## A quick aside about why I fell in love with bootstrapping
 (if you just want get straight to the technical details, feel free to [jump ahead](#what-is-bootstrapping))
 
-Some years ago (reasonably early in my career - probably in 2018 or so), when I was working on some kind of forecasting project, where we were attempting to forecast something like sales volumes or stock levels or occupancy levels or the like, we came across an interesting quandry. We had very limited historic training data, and so had relatively little confidence in the forecasts. We used a collection of different predictive models (including, if memory serves, ARIMA-style models, some linear and logistic regression ones, and eventually a NN), and blended the predictions.
+Some years ago (reasonably early in my career - probably in 2018 or so), when I was working on some kind of forecasting project, where we were attempting to forecast something like sales volumes or stock levels or occupancy levels or the like, we came across an interesting quandary. We had very limited historic training data, and so had relatively little confidence in the forecasts. We used a collection of different predictive models (including, if memory serves, ARIMA-style models, some linear and logistic regression ones, and eventually a NN), and blended the predictions.
 
 The issue was that we needed to explain to our client just how confident we were (or weren't) in the forecasts.
 
 While each model (or most at least) that we built had the ability to produce confidence bounds, these seemed far too tight, given how much volatility we could see in the historic data.
 
 We[^1] hit on a good idea (although one with questionable justification, which I'll address below). That idea was to train a set of simple neural networks (NNs) on subsets of the data, and then use the distribution of the predictions of these NNs to create some nice shaded regions around the forecasts we were giving. We knew that NNs behaved weirdly in regression settings when extrapolating, and that this was 'stochastic' (in this sense just very sensitive to the initial node weights and the training data).
+
+
+[^1]: If my colleague ever reads this, and *doesn't* think it was a good idea, then just know I'm happy to take full responsibility for it.
 
 
 This did exactly what we wanted - we had nice graphs to show the client which gave a visual demonstration of our reasonably low confidence.
@@ -65,7 +68,7 @@ In short, bootstrapping is an approach (or algorithm) for estimating some measur
 
 ## Some examples where bootstrapping may be helpful
 
-1. You've run an A/B test. What are the range of uplift values might you expect?<br>
+1. You've run an A/B test. What range of uplift values might you expect?<br>
 This is another way of saying: "if we ran this experiment over and over again, what range of uplift values would we expect to see?"
 1. We fit a model to some data, where the coefficients in the model have some physical interpretation. What range of coefficient values should we expect to see if we retrained the model on new data?
 1. We calculate some business metric (e.g. average cost per order) and would like to know how much this might vary for the next month.
@@ -78,8 +81,10 @@ For each of the examples mentioned above, there are standard, robust approaches 
 
 Specifically for the above:
 1. We can pick an appropriate hypothesis test, based on what we know about the distribution. This will allow us to calculate a p-value, and some confidence bounds. In some cases, this can be quite challenging (if either it's a complex distribution, an unknown distribution, or you don't know lots of stats) - see [this post]({% post_url 2024-01-13-ab-tests-with-bootstrapping %}) for more details.
-1. Depending on the model you're fitting, it may have a way to calculate confidence bounds on its coefficients directly (e.g. the Python `statsmodel` linear regression models have a [`conf_int` method](https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.RegressionResults.conf_int.html), which will directly return confidence bounds. This is based on the Student's t-distribution. See [^2]). Sometimes though, there will either be no way to calculate these confidence bounds, or you may not know how to do it, or even implement it.
+1. Depending on the model you're fitting, it may have a way to calculate confidence bounds on its coefficients directly (e.g. the Python `statsmodel` linear regression models have a [`conf_int` method](https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.RegressionResults.conf_int.html), which will directly return confidence bounds. This is based on the Student's t-distribution[^2]). Sometimes though, there will either be no way to calculate these confidence bounds, or you may not know how to do it, or even implement it.
 1. If we know how this measure is distributed, we can estimate this by using some stats directly (but this only works if the distribution is "well behaved").
+
+[^2]: See [this post](https://medium.com/@jcatankard_76170/linear-regression-parameter-confidence-intervals-228f0be5ea82) by Josh Tankard for some sleuthing on the matter
 
 So, while there are sometimes approaches to solving these problems using some stats knowledge, sometimes we either can't, or don't know enough to know how.
 
@@ -98,9 +103,18 @@ So, the process is as follows:
 1. For each of these samples, calculate the thing you care about.
 1. Use this however you want.
 
-> \* Why does this work?
-> 
+<details><summary>* <i>Why does this work?</i></summary>
+<div markdown="1">
+
 > In short, this sample data is the best representation we have of the population, so by redrawing samples with replacement, we're doing our best to simulate what would happen if we had to redraw the sample from the population. Sometimes, we'll draw some of the elements more than once, and sometimes not at all. In this way outliers are sometimes drawn, sometimes not, and sometimes drawn multiple times - this serves to stretch out this distribution in a way that's consistent with our best guess for the data we'd get if we redrew from the population.
+> 
+> This is the key assumption that bootstrapping makes! We don't know what the population looks like - our best information is contained in the sample. I.e. the sample represents all the information we have about the shape and structure of the population. If you know more about what the population looks like, you may be better off following a traditional approach.
+>
+> See [this section](#why-does-bootstrapping-work) for more details.
+
+</div>
+</details>
+
 
 
 ## An example in code
@@ -153,7 +167,32 @@ Nothing too surprising here:
 1. The expected value of this distribution from the bootstrap estimation is 0.508, where the true value is 0.5 (knowing what we know about the distribution the sample was drawn from).
 1. The 90% confidence bounds are wrapped tightly around 0.5. The interpretation for this is: "if we had to draw new samples from the population, and recalculate the mean, 90% of the time these would be between these two values".
 
+# Why does bootstrapping work?
 
+In this section I will give an intuitive explanation of why redrawing samples with replacement works.
+
+One of the best explanations I've seen is the answer on [this Cross Validated post](https://stats.stackexchange.com/a/26093), which I'll paraphrase here.
+
+You'd like to ask some question of the population (typically the value of some measure, e.g. what is the average value). You don't have access to the population, you only have access to the sample. So, instead you ask this same question of the sample. How much confidence should you have that this measure calculated on the sample matches what you would have got if you'd calculated it on the population?
+
+Ideally you'd redraw samples over and over again from the population, and generate a distribution. 
+
+But, you don't have access to the population. Instead, you have two options:
+
+## Option 1: Make some *assumption* about the shape of the population
+This is essentially the traditional approach. You make an assumption about the shape of the population (e.g. that it's normally distributed). You can then draw samples from your parametric normal distribution, and use these to calculate the distribution of measures. If you choose a "convenient" distribution, you may be able to skip the sampling and just calculate the answers directly.
+
+## Option 2: Use the sample you already have to learn something about the shape of the population
+If you're unwilling to make assumptions about the population shape, you can then do something else. You can assume that the shape of the population is best represented by the shape of your sample. As [conjugateprior](https://stats.stackexchange.com/users/1739/conjugateprior) says in their answer I linked above:
+
+> This is a reasonable thing to do because not only is the sample you have the best, indeed the only information you have about what the population actually looks like, but also because most samples will, if they're randomly chosen, look quite like the population they came from. Consequently it is likely that yours does too.
+
+Sampling with replacement is really just a shorthand way of doing the following procedure:
+1. We want to make our sample a population we can sample from directly.
+1. Ideally we'd make a very large (or infinite) number of copies of the data and sample from these.
+1. Sampling from the sample *with replacement* does an equivalent thing.
+
+It's also worth being clear that we're not using bootstrapping to estimate something about the population, we're using it to learn something about the *sampling distribution* of the population.
 
 # Conclusion
 
@@ -165,12 +204,15 @@ Have a look at [my post on using bootstrapping to analyse A/B tests]({% post_url
 
 # Useful links
 
-1. <https://statisticsbyjim.com/hypothesis-testing/bootstrapping/> - describes bootstrapping and confidence bounds
-1. <https://machinelearningmastery.com/a-gentle-introduction-to-the-bootstrap-method/> - another gentle introduction to bootstrapping
-1. <https://en.wikipedia.org/wiki/Bootstrapping_(statistics)/> - the Wikipedia entry for bootstrapping is quite useful. It also includes some helpful tricks, for example the smoothed bootstrap
+1. <https://statisticsbyjim.com/hypothesis-testing/bootstrapping/><br>
+This describes bootstrapping and confidence bounds in general (it's a very useful website for stats for practitioners).
+1. <https://machinelearningmastery.com/a-gentle-introduction-to-the-bootstrap-method/><br>
+Another gentle introduction to bootstrapping.
+1. <https://en.wikipedia.org/wiki/Bootstrapping_(statistics)/><br>
+The Wikipedia entry for bootstrapping is quite useful. It also includes some helpful tricks, for example the smoothed bootstrap.
+1. <https://stats.stackexchange.com/questions/26088/explaining-to-laypeople-why-bootstrapping-works><br>
+This Cross Validated question has some really nice intuitive explanations of why bootstrapping works.
+1. <https://stats.stackexchange.com/questions/11210/assumptions-regarding-bootstrap-estimates-of-uncertainty><br>
+This Cross Validated question gives a more thorough treatment of the same question as above (although admittedly most of it went over my head).
 
 # Footnotes
-
-[^1]: If my colleague ever reads this, and *doesn't* think it was a good idea, then just know I'm happy to take full responsibility for it.
-
-[^2]: See [this post](https://medium.com/@jcatankard_76170/linear-regression-parameter-confidence-intervals-228f0be5ea82) by Josh Tankard for some sleuthing on the matter
