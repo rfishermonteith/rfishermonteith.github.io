@@ -1,19 +1,22 @@
 ---
 layout: post
 title: "Intro to bootstrapping for confidence bounds"
-date: "2024-02-08 18:00"
+date: "2024-02-09 06:00"
+thumbnail_path: 'blog/2024-02-13-intro-to-bootstrapping/thumbnail.png'
 tags:
 - Bootstrapping
 ---
 
 I'll show you how to use bootstrapping, a powerful sampling technique which can be used to estimate confidence bounds, p-values and distributions for samples without the need to model (or understand) the underlying distributions.
 
+{% include figure.html path=page.thumbnail_path %}
+
 # Who is this post for?
 
 Have you ever needed to:
 1. Find confidence bounds for a weird/complex calculation?
-1. Needed to find p values for an A/B test with an unusual distribution or complex metric calculation?
-1. Needed to find p values for an A/B test with simple distributions and been too lazy to check what hypothesis test to use?
+1. Find p-values for an A/B test with an unusual distribution or complex metric calculation?
+1. Find p-values for an A/B test with simple distributions and been too lazy to check what hypothesis test to use?
 
 
 If you answered yes to any of the above, then this post is for you!
@@ -31,7 +34,7 @@ In this post, I hope to:
 ## A quick aside about why I fell in love with bootstrapping
 (if you just want get straight to the technical details, feel free to [jump ahead](#what-is-bootstrapping))
 
-Some years ago (reasonably early in my career - probably in 2018 or so), when I was working on some kind of forecasting project, where we were attempting to forecast something like sales volumes or stock levels or occupancy levels or something, we came across an interesting quandry. We had very limited historic training data, and so had relatively little confidence in the forecasts. We used a collection of different predictive models (including ARIMA-style models, some linear and logistic regression ones, and eventually a NN), and blended the predictions.
+Some years ago (reasonably early in my career - probably in 2018 or so), when I was working on some kind of forecasting project, where we were attempting to forecast something like sales volumes or stock levels or occupancy levels or the like, we came across an interesting quandry. We had very limited historic training data, and so had relatively little confidence in the forecasts. We used a collection of different predictive models (including, if memory serves, ARIMA-style models, some linear and logistic regression ones, and eventually a NN), and blended the predictions.
 
 The issue was that we needed to explain to our client just how confident we were (or weren't) in the forecasts.
 
@@ -39,11 +42,13 @@ While each model (or most at least) that we built had the ability to produce con
 
 We[^1] hit on a good idea (although one with questionable justification, which I'll address below). That idea was to train a set of simple neural networks (NNs) on subsets of the data, and then use the distribution of the predictions of these NNs to create some nice shaded regions around the forecasts we were giving. We knew that NNs behaved weirdly in regression settings when extrapolating, and that this was 'stochastic' (in this sense just very sensitive to the initial node weights and the training data).
 
+
 This did exactly what we wanted - we had nice graphs to show the client which gave a visual demonstration of our reasonably low confidence.
 
 However, it was also wrong, for a few reasons:
 1. We had no principled way to choose how to subset the data when training the iterations of the NN. We knew that using small subsamples gave wider prediction bounds, but didn't know what the right size was.
 1. While the shaded areas we could put on the plots were *useful*, they had no objective meaning.
+1. (And finally, we were actually trying to show model uncertainty - e.g. we were essentially assuming some kind of data structure when using a linear model, and we didn't actually have high confidence that this forecasting problem was a linear one. Bootstrapping doesn't help here directly, but it helped in a hand-wavy way).
 
 And that's where the story ended, for a few years.
 
@@ -54,13 +59,13 @@ And then, in 2021 or 2022, I came across bootstrapping, and my life changed for 
 We can phrase this in a few ways, at least one of which will make sense to you, depending on your background and experience (hopefully!):
 
 1. Bootstrapping is a non-parametric way to estimate a population measure from a sample.
-1. Bootstrapping is an algorithm which gives equally likely outcomes for some sampled outcome, as if you resampled.
+1. Bootstrapping is an algorithm which gives equally likely outcomes for some sampled outcome, as if you resampled from scratch.
 
 In short, bootstrapping is an approach (or algorithm) for estimating some measure of some population, based solely on the sample we have available.
 
 ## Some examples where bootstrapping may be helpful
 
-1. You've run an A|B test. What are the range of uplift values might you expect?<br>
+1. You've run an A/B test. What are the range of uplift values might you expect?<br>
 This is another way of saying: "if we ran this experiment over and over again, what range of uplift values would we expect to see?"
 1. We fit a model to some data, where the coefficients in the model have some physical interpretation. What range of coefficient values should we expect to see if we retrained the model on new data?
 1. We calculate some business metric (e.g. average cost per order) and would like to know how much this might vary for the next month.
@@ -72,7 +77,7 @@ Hopefully you can see where this is going. Anytime we calculate a thing based on
 For each of the examples mentioned above, there are standard, robust approaches to estimating these things without resorting to bootstrapping.
 
 Specifically for the above:
-1. We can pick an appropriate hyopthesis test, based on what we know about the distribution. This will allow us to calculate a p-value, and some confidence bounds. In some cases, this can be quite challenging (if either it's a complex distribution, an unknown distribution, or you don't know lots of stats)
+1. We can pick an appropriate hypothesis test, based on what we know about the distribution. This will allow us to calculate a p-value, and some confidence bounds. In some cases, this can be quite challenging (if either it's a complex distribution, an unknown distribution, or you don't know lots of stats) - see [this post]({% post_url 2024-01-13-ab-tests-with-bootstrapping %}) for more details.
 1. Depending on the model you're fitting, it may have a way to calculate confidence bounds on its coefficients directly (e.g. the Python `statsmodel` linear regression models have a [`conf_int` method](https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.RegressionResults.conf_int.html), which will directly return confidence bounds. This is based on the Student's t-distribution. See [^2]). Sometimes though, there will either be no way to calculate these confidence bounds, or you may not know how to do it, or even implement it.
 1. If we know how this measure is distributed, we can estimate this by using some stats directly (but this only works if the distribution is "well behaved").
 
@@ -84,9 +89,9 @@ In these cases, bootstrapping to the rescue!
 
 Bootstrapping relies on being able to use the sample you have to generate equally likely samples (hence the term 'bootstrapping', as in pulling yourself by your own bootstraps).
 
-So, we generate lots (usually 1000s) of bootstrap samples from our data. We pretend that each of these is actually a new sample. We calculate the thing on it, and this forms a distribution we can use for whatever we want (getting p-values, confidence bounds, plotting etc)
+So, we generate lots (usually 1000s) of bootstrap samples from our data. We pretend that each of these is actually a new sample. We calculate the thing on it, and this forms a distribution we can use for whatever we want (getting p-values, confidence bounds, plotting etc).
 
-The magic piece of this is how you generate the bootrap samples, and this is by **sampling with replacement**.
+The magic piece of this is how you generate the bootstrap samples, and this is by **sampling with replacement**.
 
 So, the process is as follows:
 1. Take your sample data, generate $n$ samples with replacement (of the same size of the original data).\*
@@ -95,7 +100,7 @@ So, the process is as follows:
 
 > \* Why does this work?
 > 
-> For a full explanation see [this section](#why-does-it-work). In short, this sample data is the best representation we have of the population, so by redrawing samples with replacement, we're doing our best to simulate what would happen if we had to redraw the sample from the population. Sometimes, we'll draw some of the elements more than once, and sometimes not at all. In this way outliers are sometimes drawn, sometimes not, and sometimes drawn multiple times - this serves to stretch out this distribution in a way that's consistent with our best guess for the data we'd get if we redrew from the population.
+> In short, this sample data is the best representation we have of the population, so by redrawing samples with replacement, we're doing our best to simulate what would happen if we had to redraw the sample from the population. Sometimes, we'll draw some of the elements more than once, and sometimes not at all. In this way outliers are sometimes drawn, sometimes not, and sometimes drawn multiple times - this serves to stretch out this distribution in a way that's consistent with our best guess for the data we'd get if we redrew from the population.
 
 
 ## An example in code
@@ -127,7 +132,6 @@ def run_bootstrap(sample_data, num_iter=1000):
 # We have some data that was sampled from somewhere (we'll make some up)
 np.random.seed(1)
 
-
 samples = np.random.random(478)  # We have a set of 478 samples from the population, drawn from the uniform distribution
 
 bootstrap_measures = run_bootstrap(samples)
@@ -146,15 +150,26 @@ Expected value: 0.5075680220514992
 90% confidence bounds: [0.48611194 0.52922992]
 ```
 Nothing too surprising here: 
-1. The expected value of this distribution from the bootstrap estimation is 0.508, where the true value is 0.5 (knowing what we know about the distribution the sample was drawn from)
-1. The 90% confidence bounds are wrapped tightly around 0.5. The interpretation for this is: "if we had to draw new samples from the population, and recalculate the mean, 90% of the time these would be between these two values"
+1. The expected value of this distribution from the bootstrap estimation is 0.508, where the true value is 0.5 (knowing what we know about the distribution the sample was drawn from).
+1. The 90% confidence bounds are wrapped tightly around 0.5. The interpretation for this is: "if we had to draw new samples from the population, and recalculate the mean, 90% of the time these would be between these two values".
 
 
 
-# The rest of the story
-1. Give some more examples on using it
-    1. A\|B test (With p-values) 
-    1. 
+# Conclusion
+
+I've introduced bootstrapping as a tool to generate equally likely samples from an existing sample, and demonstrated how this can be used to estimate the distribution of the mean value of a uniform distribution.
+
+You can use this in a wide range of settings - whenever you don't have easy access to more samples from the population, and where you'd like some confidence bounds on some parameter, measure or value.
+
+Have a look at [my post on using bootstrapping to analyse A/B tests]({% post_url 2024-01-13-ab-tests-with-bootstrapping %}) for another use case. I'll add some more examples in future.
+
+# Useful links
+
+1. <https://statisticsbyjim.com/hypothesis-testing/bootstrapping/> - describes bootstrapping and confidence bounds
+1. <https://machinelearningmastery.com/a-gentle-introduction-to-the-bootstrap-method/> - another gentle introduction to bootstrapping
+1. <https://en.wikipedia.org/wiki/Bootstrapping_(statistics)/> - the Wikipedia entry for bootstrapping is quite useful. It also includes some helpful tricks, for example the smoothed bootstrap
+
+# Footnotes
 
 [^1] If my colleague ever reads this, and *doesn't* think it was a good idea, then just know I'm happy to take full responsibility for it.
 

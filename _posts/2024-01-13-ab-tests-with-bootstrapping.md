@@ -1,8 +1,8 @@
 ---
 layout: post
 title: "A/B test analysis with bootstrapping"
-date: "2024-02-08 19:00"
-thumbnail_path: '/blog/ab-tests-with-bootstrapping-ci-example.png'
+date: "2024-02-09 07:00"
+thumbnail_path: 'blog/2024-02-13-ab-tests-with-bootstrapping/ci-example.png'
 tags:
 - Bootstrapping
 - Python
@@ -10,6 +10,8 @@ tags:
 ---
 
 In this post I'll give a hands-on walkthrough showing you how to analyse the **impact of an A/B test using bootstrap sampling**. I'll also compare this to the traditional approach, to give you confidence that bootstrapping is working the way we expect.
+
+{% include figure.html path=page.thumbnail_path %}
 
 # Intro
 
@@ -173,7 +175,7 @@ So, we get a p-value of 0.0017, reasonably close to the p-value calculated from 
 The key observation here is that we look at what percentage of the bootstrap samples led us to seeing the control beating (or at least tieing with) the variant. This is equivalent to the p-value.
 We can also plot this, which gives us (in my opinion) far more useful information about the performance of the A/B test.
 
-{% include figure.html path='/blog/ab-tests-with-bootstrapping-histogram.png' %}
+{% include figure.html path='/blog/2024-02-13-ab-tests-with-bootstrapping/histogram.png' %}
 
 What this shows is our confidence about the possible values of the true uplift. We can see it's centered around 1.5. But, it also shows how likely it is to be nearer to 1, or 2, or 2.5.
 
@@ -203,7 +205,7 @@ That the true value is outside our confidence bounds should instill a whole lot 
 
 I'd usually plot these confidence bounds visually, as a really helpful plot to show to stakeholders, because we can use it to reason about the likely impact of rolling out this A/B test.
 
-{% include figure.html path='/blog/ab-tests-with-bootstrapping-ci.png' %}
+{% include figure.html path='/blog/2024-02-13-ab-tests-with-bootstrapping/ci.png' %}
 
 The useful info this contains:
 - We're 90% confident that the uplift is positive (the entire bar is green).
@@ -211,7 +213,7 @@ The useful info this contains:
 
 Out of interest, here's how we'd plot it if the 90% CI includes 0% (which would indicate that the p-value > 0.05).
 
-{% include figure.html path='/blog/ab-tests-with-bootstrapping-ci-example.png' %}
+{% include figure.html path='/blog/2024-02-13-ab-tests-with-bootstrapping/ci-example.png' %}
 
 The relative sizes of the red and green bars can be used to make an educated call on whether to roll out the variant or not (going beyond p-values and relying entirely on confidence intervals is beyond the scope of this post, but I may cover it in future).
 
