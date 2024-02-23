@@ -53,3 +53,5 @@ plugins:
 # Exclude code files
 exclude:
   - "*.py"
+
+piratepx_project_id: 57c14f04-8eff-4dcd-9c3e-a18e464b6962
