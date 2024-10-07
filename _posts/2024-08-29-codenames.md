@@ -1,6 +1,6 @@
 ---
 layout: post
-title: '"Cheating" at Codenames'
+title: '"Cheating" at Codenames with vector embeddings'
 date: "2024-10-07 22:24"
 thumbnail_path: 'blog/2024-08-29-codenames/thumbnail.jpg'
 tags:
