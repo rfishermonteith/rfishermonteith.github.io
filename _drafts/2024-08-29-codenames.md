@@ -1,7 +1,7 @@
 ---
 layout: post
 title: '"Cheating" at Codenames'
-date: "2024-10-07 21:38"
+date: "2024-10-07 22:24"
 thumbnail_path: 'blog/2024-08-29-codenames/thumbnail.jpg'
 tags:
 - Python
@@ -10,9 +10,7 @@ tags:
 ---
 
 Have you ever wondered whether there's an optimal strategy for the card game [Codenames](https://en.wikipedia.org/wiki/Codenames_(board_game))?
-Or, have you ever wondered whether there's a way to cheat [^1]?
-
-This post details my quest to find a (near) optimal solution, which is technically within the rules.
+<br><br>This post details my quest to find a (near) optimal solution, which is technically within the rules.
 
 {% include figure.html path=page.thumbnail_path %}
 
@@ -22,7 +20,7 @@ I like the game Codenames. If you're not familiar, head over to [Wikipedia](http
 
 The strategy boils down to a few specific objectives:
 1. As the spymaster, give a word that is semantically linked to as many of your team's cards as possible, while being 
-semantically unrelated to your opponents cards. This word should also be especially unrelated to the double agent card.
+semantically unrelated to your opponents cards. This word should also be especially unrelated to the assassin card.
 1. As a field operative (teammate), simulate objective 1, and then guess the cards the spymaster likely had in mind.
 
 In practice, this isn't easy at all, because it's difficult to come up with a lot of words, and then evaluate how 
@@ -52,7 +50,7 @@ And also:
 
 > The number you say after your clue can't be used as a clue.
 
-So, using the number is out. Looks like we'll need to something with the meaning of the words.
+So, using the number is out. Looks like we'll need to do something with the meaning of the words.
 
 ## A technically legal strategy
 
@@ -61,21 +59,21 @@ Aside from humans, what else is good at finding semantic links between words?
 Well, one of the interpretations of the latent space embeddings of language models are that these embeddings are semantic: 
 the vector embedding of a word or phrase is semantically related to the vector embeddings of other words or phrases with similar semantics.
 
-One of the widely circulated facts (from back in 2015!) which got me hooked on semantic embeddings was the idea that in
-some word embeddings, $king - man + woman \approx queen$ (you can read more 
+One of the widely circulated facts (from back in 2015!) which got me hooked on the concept of semantic embeddings was the idea that in
+some word embedding latent spaces, $king - man + woman \approx queen$ (you can read more 
 [here](https://www.technologyreview.com/2015/09/17/166211/king-man-woman-queen-the-marvelous-mathematics-of-computational-linguistics/)).
 
 So, we could use these embeddings to find good words to use as clues. Perhaps these will even be perfect clues? 
 
-So, straight to the algorithm:
+So, straight to the algorithm I'm proposing:
 1. Using any model capable of creating vector embeddings from text, the spymaster converts all words on the board to vectors, along with a dictionary of words.
-2. The spymaster finds the dictionary word which is closest in vector space to as many of their team's words, and far from their opponent's (and the double agent).
-3. The spymaster then calculates how many of their team's words are closest to this chosen word, and then says this word, and the number $n$.
-4. The field operatives use the same model to create vector embeddings of all words on the board, as well as the word the spymaster said, find the closest $n$ of them.
+2. The spymaster finds the dictionary word which is closest in vector space to as many of their team's words, and far from their opponent's (and the assassin).
+3. The spymaster then calculates how many of their team's words are closest to this chosen word (before encountering another word), and then says this word, and the number $n$.
+4. The field operatives use the same model to create vector embeddings of all words on the board, as well as the word the spymaster said, and then find the closest $n$ board words to the word the spymaster said.
 
 A couple of notes:
 1. This algorithm doesn't care what embedding you use, as long as it's shared by both spymaster and teammates.
-2. The distance metric doesn't matter either. Again, as long as it's shared [^2].
+2. The distance metric doesn't matter either, as long as it's shared [^2].
 3. This is deterministic - there's no risk that the spymaster and field operatives will arrive at a different list of $n$ words.
 
 [//]: # (We might try formalise this a bit more:)
@@ -103,7 +101,7 @@ Now, does this work? Yes! (and it's technically not cheating.)
 
 Does it work perfectly? No! (at least I haven't managed to make it work perfectly.)
 
-As an example, for the following game, the suggested word is "penalty". The would allow you to guess 7 of the 9 words on
+As an example, for the following game, the suggested word is "penalty". This would allow you to guess 7 of the 9 words on
 your first turn.
 
 **Our words are:** ['scorpion', 'orange', 'pyramid', 'carrot', 'plastic', 'missile', 'hole', 'crown', 'princess']
@@ -112,15 +110,16 @@ your first turn.
 
 **Assassin:** ['scientist']
 
-Now, I'd challenge you to create a post-hoc rationalisation for what the semantic link is!
+I'd challenge you to create a post-hoc rationalisation for what the semantic link is!
+
+***
 
 I then tested what the distribution of scores are using this (by playing the game 10000 times).
-
 
 {% include figure.html path='/blog/2024-08-29-codenames/bert_big_00010000.png' %}
 
 As you can see, we're only able to win the game in a single turn around 7% of the time! The mode of the number of 
-cards we can get is 7. 
+cards we can guess correctly on the first turn is 7. 
 
 
 You can have a look at the code I've written to simulate the game, using a few different embeddings [here](https://github.com/rfishermonteith/codename-codenames). 
@@ -147,11 +146,13 @@ of the time. Why might this be?
 
 I don't have a great answer, but I have some intuition for why this might be:
 - The hashed vector is probably more uniformly distributed, so we get more efficient use of the words we have.
-- We can have a higher dimensional vector, which also means that the embeddings can be more sparse, which means we're more likely to find a useful one.
+- We can have a higher dimensional vector, which also means that the embeddings can be more sparse, which means we're 
+more likely to find a useful embedded word.
 
 
 # A lower bound on the number of words required for an optimal solution
 
+We only have around 70k dictionary words (many of which are obscure, or not-real-words). 
 Can we calculate a lower bound on the number of words required in a dictionary to be able to play optimally?
 
 Because the effect of the algorithm above is just to create a mapping between code words and dictionary words, we can 
@@ -217,8 +218,5 @@ of the 9 words, then it's likely that they'll immediately win in their turn, sin
 Happy "cheating"!
 
 # Footnotes
-
-[^1]: Ethically, of course
-
 
 [^2]: It probably needs a bit more, like having a way to break ties, but I haven't thought about this too much
