@@ -4,6 +4,18 @@ title: "Richard Fisher-Monteith: Home Page"
 header_title: Richard Fisher-Monteith
 include_header: home_header.html
 nav_item: home
+redirect_from:
+  - /writing/
 ---
 
 {% include about.html %}
+
+<hr>
+<h3 class="mb2">Writing</h3>
+
+
+{% include writing-nav.html %}
+{% for post in paginator.posts %}
+  {% include post-outline.html post=post %}
+{% endfor %}
+{% include pagination.html %}
