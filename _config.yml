@@ -35,7 +35,7 @@ contact_urls:
 
 # Jekyll build settings
 paginate: 10
-paginate_path: "/writing/page:num"
+paginate_path: "/page:num"
 permalink: "/writing/:year/:month/:day/:title/"
 sass:
   sass_dir: "/assets/css"
