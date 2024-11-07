@@ -156,7 +156,7 @@ We only have around 70k dictionary words (many of which are obscure, or not-real
 Can we calculate a lower bound on the number of words required in a dictionary to be able to play optimally?
 
 Because the effect of the algorithm above is just to create a mapping between code words and dictionary words, we can 
-think of the spymaster's jop as $f: w_d \rightarrow w_c$ and the field operative's as $f^{-1}: w_c \rightarrow w_d$.
+think of the spymaster's job as $f: w_d \rightarrow w_c$ and the field operative's as $f^{-1}: w_c \rightarrow w_d$.
 
 Given this, it's clear that a perfect strategy needs a mapping to be 1 to 1 (in the sense that 1 dictionary word needs to map to precisely 1 set of 9 code words [of those displayed on the board]).
 
