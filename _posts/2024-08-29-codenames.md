@@ -204,7 +204,7 @@ extra word doesn't appear as one of the 25 cards which aren't your 9.
 - This feels like the Dobble problem/projective planes problem, but I haven't yet managed to wrap my head around it. 
 You can [start here](https://www.petercollingridge.co.uk/blog/mathematics-toys-and-games/dobble/) for a good description
 of this by Peter Collingridge. The [Matt Parker's Stand-up maths video](https://www.youtube.com/watch?v=VTDKqW_GLkw&t) 
-is also excellent
+is also excellent.
 
 # Wrapping up
 
