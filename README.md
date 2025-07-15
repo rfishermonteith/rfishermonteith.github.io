@@ -17,3 +17,7 @@ So, an alternative is [piratepx](https://www.piratepx.com/), which:
 1. Requires a 1-line piece of code
 
 See https://www.felixparadis.com/posts/piratepx-review-analytics-without-js-cookies-or-legal-headache/ for more details (and some nice meta/dogfooding).
+
+## Running locally
+
+Run `docker compose up` from the root directory to build and run a docker image which will serve the webiste locally. This will also watch for changes and automatically restart the server to serve them.
