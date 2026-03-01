@@ -145,10 +145,22 @@ with open("../../assets/viz/kernel-smoothing/chart_2.json", "w") as f:
 
 
 
+# ---------------- Layout constants for slider charts ----------------
+PLOT_AREA_H = 300     # plot area height in pixels (tune this once)
+MARGIN_T = 60         # top margin
+X_AXIS_SPACE = 30     # space below plot for x-axis title + tick labels
+SLIDER_H = 100        # height per slider (currentvalue label + track + tick labels + gap)
+
+def slider_layout(n_sliders):
+    """Compute height, margin_b, and slider y positions for n_sliders."""
+    margin_b = X_AXIS_SPACE + n_sliders * SLIDER_H
+    height = MARGIN_T + PLOT_AREA_H + margin_b
+    slider_ys = [-(X_AXIS_SPACE + i * SLIDER_H) / PLOT_AREA_H for i in range(n_sliders)]
+    return height, margin_b, slider_ys
+
 # ---------------- Kernel + Bayesian Smoothing ----------------
 fig = go.Figure()
-bandwidths = np.logspace(-2, 0, 24).round(3)
-# bandwidths = [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.05, 0.1, 0.5, 1]
+bandwidths = np.array([0.01, 0.02, 0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.5, 0.7, 1.0])
 for bandwidth in bandwidths:
     x = df["confidence"].values.astype(float)
     y = df["in_band"].values.astype(float)
@@ -201,36 +213,47 @@ for bandwidth in bandwidths:
                   # row=2, col=1
                   )
 
+# Always-visible observed means
+fig.add_trace(go.Scatter(
+    x=grouped["confidence"], y=grouped["means"], mode="markers",
+    name="Observed means", marker=dict(size=8, color="red", symbol="x")))
+
 fig.update_layout(
     xaxis={"title":{"text":"Prediction confidence level"},"tickformat": ".0%", "range":[0.5,1]},
     yaxis={"title":{"text":"Probability of true confidence"}, "tickformat": ".0%", "range": [0,1]}
 )
-starting = 8
-# Make 8th trace visible
+starting = 3
+# Make starting trace visible (bandwidth=0.05)
 for i in range(starting*3,starting*3+3):
     fig.data[i].visible = True
 
 # Create and add slider
+n_bw_traces = len(bandwidths) * 3  # combo traces before the observed means
 steps = []
 for i in range(len(bandwidths)):
     step = dict(
         method="update",
-        args=[{"visible": [False] * len(fig.data)},
-              {"title": "Slider switched to step: " + str(bandwidths[i])}],  # layout attribute
+        args=[{"visible": [False] * n_bw_traces + [True]},
+              {}],
         label=f"{bandwidths[i]}"
     )
     step["args"][0]["visible"][i*3:(i+1)*3] = 3*[True]  # Toggle i'th trace to "visible"
     steps.append(step)
 
+_h3, _mb3, _sy3 = slider_layout(1)
+
 sliders = [dict(
     active=starting,
     currentvalue={"prefix": "bandwidth: "},
     pad={"t": 50},
-    steps=steps
+    steps=steps,
+    y=_sy3[0],
 )]
 
 fig.update_layout(
-    sliders=sliders
+    sliders=sliders,
+    height=_h3,
+    margin=dict(b=_mb3, t=MARGIN_T),
 )
 
 fig.show()
@@ -427,10 +450,10 @@ with open("../../assets/viz/kernel-smoothing/chart2.json", "w") as f:
 # and set the correct visibility.
 
 fig_lp = go.Figure()
-bandwidths_lp = np.logspace(-2, 0, 12).round(3)
+bandwidths_lp = np.array([0.01, 0.02, 0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.5, 0.7, 1.0])
 prior_strengths = np.array([0, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0])
 
-default_bw_idx = 4
+default_bw_idx = 3  # bandwidth=0.05
 default_prior_idx = 0  # no prior by default
 
 n_bw = len(bandwidths_lp)
@@ -491,16 +514,19 @@ prior_steps = []
 for j in range(n_prior):
     prior_steps.append(dict(method="skip", args=[{}, {}], label=f"{prior_strengths[j]}"))
 
+_h4, _mb4, _sy4 = slider_layout(2)
+
 fig_lp.update_layout(
     sliders=[
         dict(active=default_bw_idx, currentvalue={"prefix": "bandwidth: "},
-             pad={"t": 50}, steps=bw_steps),
+             pad={"t": 50}, steps=bw_steps, y=_sy4[0]),
         dict(active=default_prior_idx, currentvalue={"prefix": "prior strength: "},
-             pad={"t": 100}, steps=prior_steps),
+             pad={"t": 50}, steps=prior_steps, y=_sy4[1]),
     ],
+    height=_h4,
+    margin=dict(b=_mb4, t=MARGIN_T),
     xaxis={"title": {"text": "Prediction confidence level"}, "tickformat": ".0%", "range": [0.5, 1]},
-    yaxis={"title": {"text": "Estimated true probability"}, "tickformat": ".0%", "range": [0, 1]},
-    title="Kernel Regression with Linear Prior (y = x)"
+    yaxis={"title": {"text": "Probability of true confidence"}, "tickformat": ".0%", "range": [0, 1]},
 )
 
 fig_lp.show()
