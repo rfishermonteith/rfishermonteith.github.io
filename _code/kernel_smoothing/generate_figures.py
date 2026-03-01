@@ -71,6 +71,7 @@ with open("../../assets/viz/kernel-smoothing/chart_1.json", "w") as f:
     f.write(j)
 
 
+
 # Uniform prior
 grouped["a_post"] = grouped["successes"] + 1
 grouped["b_post"] = grouped["n"] - grouped["successes"] + 1
@@ -142,6 +143,19 @@ j = fig.to_json()
 with open("../../assets/viz/kernel-smoothing/chart_2.json", "w") as f:
     f.write(j)
 
+# Export ridgeline as thumbnail PNG
+fig_png = go.Figure(fig)
+fig_png.update_xaxes(visible=False, range=[0.45, 1.01])
+fig_png.update_yaxes(visible=False)
+fig_png.update_layout(
+    showlegend=False,
+    margin=dict(l=0, r=5, t=0, b=0),
+    width=120,
+    height=82,
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+)
+fig_png.write_image("../../assets/img/blog/2025-12-21-kernel-smoothing/thumbnail.png", scale=2)
 
 
 
