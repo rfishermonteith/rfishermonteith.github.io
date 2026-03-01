@@ -1,0 +1,19 @@
+<div id="{{ include.id }}" style="margin-bottom: 1.5em;"></div>
+<script>
+(function() {
+  var chartId = "{{ include.id }}";
+  var jsonUrl = "{{ include.json | relative_url }}";
+
+  function renderChart() {
+    fetch(jsonUrl)
+      .then(r => r.json())
+      .then(fig => Plotly.newPlot(chartId, fig.data, fig.layout));
+  }
+
+  if (typeof Plotly !== "undefined") {
+    renderChart();
+  } else {
+    window.addEventListener("load", renderChart);
+  }
+})();
+</script>
