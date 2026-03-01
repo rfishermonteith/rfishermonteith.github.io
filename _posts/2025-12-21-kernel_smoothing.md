@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Kernel smoothing for calibration estimation"
-date: "2025-12-21 17:00ß"
+date: "2026-03-01 17:35"
 thumbnail_path: 'blog/2025-12-21-kernel-smoothing/thumbnail.png'
 extra_scripts:
 - https://cdn.plot.ly/plotly-3.3.0.min.js
