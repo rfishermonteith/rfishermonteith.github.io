@@ -2,20 +2,21 @@
 layout: post
 title: "Kernel smoothing for calibration estimation"
 date: "2025-12-21 17:00ß"
-thumbnail_path: ''
+thumbnail_path: 'blog/2025-12-21-kernel-smoothing/thumbnail.png'
 extra_scripts:
 - https://cdn.plot.ly/plotly-3.3.0.min.js
 tags:
-- example
+- Calibration
+- Visualisation
 ---
 
 I'll show some early calibration plots of my calibration tracking, and show how I've used a few smoothing techniques to produce useful early charts.
 
 # Intro
 
-I like making quantified predictions (perhaps more on that another time). These look like either "I'm X% sure Y will happen" or "I X% sure the value of Y will between A and B".
+I like making quantified predictions (perhaps more on that another time). These look like either "I'm X% sure Y will happen" or "I'm X% sure the value of Y will between A and B".
 
-Then, I'm interested in calibrating these predictions (i.e. getting that X% to reflect reality as closely as possible - 90% of the time I say something is 90% likely, it should happen). I've started recording my predictions (with confidence bounds), and I'd like to start visualising my calibration curve.
+My current interest is calibrating these predictions (i.e. getting that X% to reflect reality as closely as possible - i.e. on average 90% of the things I say are 90% likely should happen). I've started recording my predictions (with confidence bounds), and I'd like to start visualising my calibration curve.
 
 Unfortunately, this data is pretty sparse (currently 22-ish predictions, spread from 50% to 95%)[^right-hand]. The outcome of each of these is binary (i.e. the actual value was either in my prediction bands, or not).
 
@@ -55,8 +56,8 @@ So, we might like to look the distribution of our belief in what the true succes
 {% include plotly-chart.html id="beta-with-uniform-prior" json="/assets/viz/kernel-smoothing/chart_2.json" %}
 
 This feels a little more useful. We can see that our confidence in the true success rates are pretty low (given that the distributions are spread out). A few things to note:
-- The MAP (maximum a priori) estimate matches the success rate - this is the most likely value, given the evidence, which feels right.
-- There's no obvious trend.
+- The MAP (maximum a priori) estimate matches the success rate - this is the most likely value (the max point of each distribution), given the evidence, which feels right.
+- There's no obvious trend across the prediction confidence levels.
 
 # Finding a trend
 
@@ -73,7 +74,7 @@ To start, let's just use an RBF (Radial Basis Function) kernel to smooth the val
 
 {% include plotly-chart.html id="kernel-snmoothing" json="/assets/viz/kernel-smoothing/chart_3.json" %}
 
-You can play with the slider to see what we changes as the bandwidth changes. We can see that the confidence bounds are always pretty wide. As we increase the bandwidth, the line flattens out (and it becomes closer to just a global average).
+You can play with the slider to see what changes as we change the bandwidth. We can see that the confidence bounds are always pretty wide. As we increase the bandwidth, the line flattens out (and it becomes closer to just a global average).
 
 Let's see what this looks like when we include a prior that I'm perfectly calibrated. Then, as new evidence arrives, this posterior will update.
 
@@ -84,11 +85,11 @@ You can now use both sliders to see the effect of the combination. As the streng
 
 Now, I don't think that a prior of this form is eactly right - we'd probably prefer a prior on some kind of monotonicity, but this is probably fit for purpose.
 
-Without a lot of reasoning, I'm going to pick a bandwidth of 0.05 and prior of 0.1.
+Without a lot of reasoning, I'm going to pick a bandwidth of 0.05 and prior of 0.1 for now.
 
 # Conclusion
 
-I now have a workable smoothing technique, which gives me an early glimpse of my calibration curve.
+I now have a workable smoothing technique, which gives me an early glimpse of my calibration curve (which is for now very noisy, and not very useful).
 
 Once I have some more scored predictions, I'll add a new post showing how the calibration curve evolves over time.
 
