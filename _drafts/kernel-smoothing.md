@@ -73,10 +73,24 @@ To start, let's just use an RBF (Radial Basis Function) kernel to smooth the val
 
 {% include plotly-chart.html id="kernel-snmoothing" json="/assets/viz/kernel-smoothing/chart_3.json" %}
 
-You can play with the slider to see what we change the bandwidth parameter. We can see that the confidence bounds are always pretty wide. As we increase the bandwidth, the line flattens out (and it becomes closer to just a global average)
+You can play with the slider to see what we changes as the bandwidth changes. We can see that the confidence bounds are always pretty wide. As we increase the bandwidth, the line flattens out (and it becomes closer to just a global average).
+
+Let's see what this looks like when we include a prior that I'm perfectly calibrated. Then, as new evidence arrives, this posterior will update.
+
 
 {% include plotly-dual-slider.html id="chart4" json="/assets/viz/kernel-smoothing/chart_4.json" n_bw=12 n_prior=7 %}
 
+You can now use both sliders to see the effect of the combination. As the strength of the prior increases, the resulting calibration curve is forced closer to $y=x$, and the confidence bounds narrow.
+
+Now, I don't think that a prior of this form is eactly right - we'd probably prefer a prior on some kind of monotonicity, but this is probably fit for purpose.
+
+Without a lot of reasoning, I'm going to pick a bandwidth of 0.05 and prior of 0.1.
+
+# Conclusion
+
+I now have a workable smoothing technique, which gives me an early glimpse of my calibration curve.
+
+Once I have some more scored predictions, I'll add a new post showing how the calibration curve evolves over time.
 
 # Footnotes 
 
