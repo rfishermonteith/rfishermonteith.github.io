@@ -1,0 +1,41 @@
+<div id="{{ include.id }}"></div>
+<script>
+(function() {
+  var chartId = "{{ include.id }}";
+  var jsonUrl = "{{ include.json | relative_url }}";
+  var nBw = {{ include.n_bw }};
+  var nPrior = {{ include.n_prior }};
+  var nComboTraces = nBw * nPrior * 3;
+
+  function renderChart() {
+    fetch(jsonUrl)
+      .then(function(r) { return r.json(); })
+      .then(function(fig) {
+        Plotly.newPlot(chartId, fig.data, fig.layout).then(function() {
+          var gd = document.getElementById(chartId);
+
+          gd.on('plotly_sliderchange', function() {
+            var bwIdx = gd.layout.sliders[0].active;
+            var priorIdx = gd.layout.sliders[1].active;
+            var traceStart = (bwIdx * nPrior + priorIdx) * 3;
+
+            var vis = new Array(nComboTraces).fill(false);
+            vis[traceStart] = true;
+            vis[traceStart + 1] = true;
+            vis[traceStart + 2] = true;
+            // Always-visible: diagonal + observed means
+            vis.push(true, true);
+
+            Plotly.update(gd, {visible: vis}, {});
+          });
+        });
+      });
+  }
+
+  if (typeof Plotly !== "undefined") {
+    renderChart();
+  } else {
+    window.addEventListener("load", renderChart);
+  }
+})();
+</script>
