@@ -14,7 +14,7 @@ I'll show some early calibration plots of my calibration tracking, and show how 
 
 # Intro
 
-I like making quantified predictions (perhaps more on that another time). These look like either "I'm X% sure Y will happen" or "I'm X% sure the value of Y will between A and B".
+I like making quantified predictions (perhaps more on that another time). These look like either "I'm X% sure Y will happen" or "I'm X% sure the value of Y will be between A and B".
 
 My current interest is calibrating these predictions (i.e. getting that X% to reflect reality as closely as possible - i.e. on average 90% of the things I say are 90% likely should happen). I've started recording my predictions (with confidence bounds), and I'd like to start visualising my calibration curve.
 
